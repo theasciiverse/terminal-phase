@@ -9,6 +9,40 @@
          goblinoid/actor-lib/env
          goblinoid/actor-lib/ticker)
 
+
+(define (make-player-ship)
+  'TODO)
+
+(define (make-bullet write-pos start-x start-y)
+  'TODO)
+
+(define (make-starfield)
+  'TODO)
+
+(define (make-level spawn-ticked display-cell env)
+  (lambda () 
+    (define (do-display)
+      (raart:vappend
+       #:halign 'center
+       (raart:frame
+        (raart:blank 50 12))
+       (raart:place-at
+        (raart:place-at
+         (raart:blank 50 2)
+         0 (- 50 18) ; 18 is width of HI-SCORE + zeroes
+         (raart:vappend
+          #:halign 'right
+          (raart:text "SCORE: 00000000")
+          (raart:text "HI-SCORE: 00000000")))
+        0 0
+        (raart:vappend
+         #:halign 'left
+         (raart:text "LIVES:   3")
+         (raart:text "LEVEL:   1")))))
+    (display-cell do-display)
+    (void)))
+
+
 (define (raart-render-game get-game-display gw)
   (define width
     (game-display-cols gw))
@@ -31,11 +65,8 @@
          (val->raart v))
        lst))
 
-(define (make-player-ship)
-  'TODO)
-
-(define (make-bullet write-pos start-x start-y)
-  'TODO)
+;;; Each column is a single column of current terrain.
+;;; They're happend'ed together.
 
 (struct game
   (;; actormap of participants
@@ -86,36 +117,6 @@
      30.0)
    (define (word-return gw)
      (void))])
-
-(define (make-starfield)
-  'TODO)
-
-(define (make-level spawn-ticked display-cell env)
-  (lambda () 
-    (define (do-display)
-      (raart:vappend
-       #:halign 'center
-       (raart:frame
-        (raart:blank 50 12))
-       (raart:place-at
-        (raart:place-at
-         (raart:blank 50 2)
-         0 (- 50 18) ; 18 is width of HI-SCORE + zeroes
-         (raart:vappend
-          #:halign 'right
-          (raart:text "SCORE: 00000000")
-          (raart:text "HI-SCORE: 00000000")))
-        0 0
-        (raart:vappend
-         #:halign 'left
-         (raart:text "LIVES:   3")
-         (raart:text "LEVEL:   1")))))
-    (display-cell do-display)
-    (void)))
-
-
-;;; Each column is a single column of current terrain.
-;;; They're happend'ed together.
 
 (define (new-game rows cols)
   (define actormap (make-actormap))
