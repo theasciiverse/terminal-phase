@@ -3,12 +3,17 @@
 (require (prefix-in raart: raart)
          ansi
          lux
-         goblinoid)
+         goblinoid
+         ;; debugging
+         pk)
 
 (require goblinoid
          goblinoid/actor-lib/env
          goblinoid/actor-lib/ticker)
 
+
+;;; Sprites and other goblin'y things
+;;; =================================
 
 (define (make-player-ship)
   'TODO)
@@ -19,12 +24,32 @@
 (define (make-starfield)
   'TODO)
 
+
+#;(define (enemy-moving-ship write-char die)
+  (define sprite
+    (raart:fg 'yellow
+              (raart:char #\<)))
+  (define ((enemy pos))
+    (if (< pos 0)
+        (die)
+        (write-char)
+        )
+    (write-sprite sprite  6)
+    )
+
+  )
+
+(define LEVEL-WIDTH 50)
+(define LEVEL-HEIGHT 12)
+
 (define (make-level spawn-ticked display-cell env)
-  (lambda () 
+  (lambda (bcom) 
     (define (do-display)
       (raart:vappend
        #:halign 'center
+       (raart:text ".-*[    SPAAAACE!    ]*-.")
        (raart:frame
+        
         (raart:blank 50 12))
        (raart:place-at
         (raart:place-at
@@ -42,6 +67,9 @@
     (display-cell do-display)
     (void)))
 
+
+;;; Game infrastructure
+;;; ===================
 
 (define (raart-render-game get-game-display gw)
   (define width
@@ -99,6 +127,10 @@
      (match e
        ;; quit
        ["q" #f]
+       [(screen-size-report rows cols)
+        (struct-copy game gw
+                     [display-rows rows]
+                     [display-cols cols])]
        [_ gw]))
    (define (word-output gw)
      (define (compose-display)
@@ -109,7 +141,10 @@
      (actormap-run (game-actormap gw)
                    compose-display))
    (define (word-label gw frame-time)
-     "Spaaaaaaace!")
+     (define game-name "Spaaaaaaace!")
+     (if (show-fps?)
+         (lux-standard-label game-name frame-time)
+         game-name))
    (define (word-fps gw)
      ;; 30?  60???
      ;; probably 30 is something terminals can reliably
@@ -174,5 +209,20 @@
          (fiat-lux (new-game rows cols))))))
   (void))
 
+(define show-fps?
+  (make-parameter #f))
+
 (module+ main
+  (command-line
+   #:once-each
+   [("-d" "--debug-file")
+    debug-file-arg
+    "Print current-error-port to this debug file"
+    (let ([debug-file (open-output-file debug-file-arg
+                                        #:exists 'append)])
+      (current-error-port debug-file))]
+   [("-f" "--show-fps")
+    "Show current FPS"
+    (show-fps? #t)])
+
   (start-game))
