@@ -24,6 +24,40 @@
 (define (make-starfield)
   'TODO)
 
+(struct level-tape (flavor-lines tile-lines longest-line))
+
+;; Separate level text into flavor lines, tile lines, and count
+;; of longest tile line
+(define (read-level-tape level-text)
+  (define text-lines
+    (list->vector (string-split level-text "\n")))
+  (define split-line-num
+    (let lp ([lines (vector->list text-lines)]
+             [count 0])
+      (match lines
+        ['() #f]
+        [(list this-line rest-lines ...)
+         (if (and (> (string-length this-line) 0)
+                  (eq? (string-ref this-line 0) #\-))
+             count
+             (lp rest-lines (add1 count)))])))
+  (define-values (flavor-lines tile-lines)
+    (if split-line-num
+        (vector-split-at text-lines split-line-num)
+        (values (vector) text-lines)))
+  (define longest-tile-line
+    (apply max (for/list ([l tile-lines])
+                 (string-length l))))
+  (level-tape flavor-lines tile-lines longest-tile-line))
+
+(define (open-level-tape level-filename)
+  (read-level-tape
+   (call-with-input-file level-filename
+     port->string)))
+
+(define (make-level level-tape terrain-spawner enemy-spawner)
+  'TODO)
+
 
 #;(define (enemy-moving-ship write-char die)
   (define sprite
