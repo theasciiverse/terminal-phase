@@ -3,25 +3,24 @@
 (require (prefix-in raart: raart)
          ansi
          lux
-         goblinoid
          ;; debugging
          pk)
 
-(require goblinoid
-         goblinoid/actor-lib/env
-         goblinoid/actor-lib/ticker)
+(require goblins
+         goblins/actor-lib/env
+         goblins/actor-lib/ticker)
 
 
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
-(define (make-player-ship)
+(define (^player-ship bcom)
   'TODO)
 
-(define (make-bullet write-pos start-x start-y)
+(define (^bullet bcom write-pos start-x start-y)
   'TODO)
 
-(define (make-starfield)
+(define (^starfield bcom)
   'TODO)
 
 (struct level-tape (flavor-lines tile-lines longest-line))
@@ -55,7 +54,7 @@
    (call-with-input-file level-filename
      port->string)))
 
-(define (make-level level-tape terrain-spawner enemy-spawner)
+#;(define (make-level level-tape terrain-spawner enemy-spawner)
   'TODO)
 
 
@@ -76,8 +75,8 @@
 (define LEVEL-WIDTH 50)
 (define LEVEL-HEIGHT 12)
 
-(define (make-level spawn-ticked display-cell env)
-  (lambda (bcom) 
+(define (^level bcom spawn-ticked display-cell env)
+  (lambda () 
     (define (do-display)
       (raart:vappend
        #:halign 'center
@@ -98,7 +97,7 @@
          #:halign 'left
          (raart:text "LIVES:   3")
          (raart:text "LEVEL:   1")))))
-    (display-cell do-display)
+    ($ display-cell do-display)
     (void)))
 
 
@@ -113,7 +112,7 @@
   (raart:matte
    width height
    (raart:place-cursor-after
-    (val->raart (or (get-game-display)
+    (val->raart (or ($ get-game-display)
                     (raart:blank 0 0)))
     0 0)))
 
@@ -151,9 +150,9 @@
      ;; Either all of this succeeds or nothing succeeds.
      (define (transactional-update!)
        ;; reset the environment
-       (reset-env)
+       ($ reset-env)
        ;; run all objects
-       (ticker))
+       ($ ticker))
      (actormap-run! (game-actormap gw)
                     transactional-update!)
      gw)
@@ -191,17 +190,19 @@
   (define actormap (make-actormap))
   (define (make-new-game)
     (define display-cell
-      (spawn (make-cell)))
+      (spawn ^cell))
     (match-define (list env reset-env)
       (spawn-env-pair))
     (match-define (list ticker-register ticker-tick)
       (spawn-ticker-pair))
-    (define (spawn-ticked handler)
-      (define ref
-        (spawn handler))
-      (ticker-register ref)
-      ref)
-    (spawn-ticked (make-level spawn-ticked display-cell env))
+    (define spawn-ticked
+      (make-keyword-procedure
+       (lambda (kws kw-args constructor . args)
+         (define ref
+           (keyword-apply spawn kws kw-args constructor args))
+         ($ ticker-register ref)
+         ref)))
+    (spawn-ticked ^level spawn-ticked display-cell env)
     (game actormap ticker-tick reset-env display-cell rows cols))
   (actormap-run! actormap make-new-game))
 
