@@ -186,6 +186,14 @@
    (define (word-return gw)
      (void))])
 
+(define (make-spawn-ticked ticker-register)
+  (make-keyword-procedure
+   (lambda (kws kw-args constructor . args)
+     (define ref
+       (keyword-apply spawn kws kw-args constructor args))
+     ($ ticker-register ref)
+     ref)))
+
 (define (new-game rows cols)
   (define actormap (make-actormap))
   (define (make-new-game)
@@ -196,12 +204,7 @@
     (match-define (list ticker-register ticker-tick)
       (spawn-ticker-pair))
     (define spawn-ticked
-      (make-keyword-procedure
-       (lambda (kws kw-args constructor . args)
-         (define ref
-           (keyword-apply spawn kws kw-args constructor args))
-         ($ ticker-register ref)
-         ref)))
+      (make-spawn-ticked ticker-register))
     (spawn-ticked ^level spawn-ticked display-cell env)
     (game actormap ticker-tick reset-env display-cell rows cols))
   (actormap-run! actormap make-new-game))
