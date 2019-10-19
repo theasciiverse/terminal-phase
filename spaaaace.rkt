@@ -126,8 +126,6 @@
 
     ;; Build display
     (define (do-display)
-      
-      
       (raart:vappend
        #:halign 'center
        (raart:text ".-*[    SPAAAACE!    ]*-.")
