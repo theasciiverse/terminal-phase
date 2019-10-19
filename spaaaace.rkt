@@ -8,16 +8,45 @@
 
 (require goblins
          goblins/actor-lib/env
-         goblins/actor-lib/ticker)
+         goblins/actor-lib/ticker
+         goblins/actor-lib/facet
+         goblins/actor-lib/mactor)
 
 
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
-(define (^player-ship bcom)
-  'TODO)
+(define (^player-ship bcom write-y spawn-ticked
+                      #:initial-y [y (floor (/ LEVEL-HEIGHT 2))])
+  (define moved-this-tick?
+    (spawn ^cell #f))
 
-(define (^bullet bcom write-pos start-x start-y)
+  (define (^next bcom y)
+    (mactor
+     [(tick)
+      ;; Write out our y position
+      ($ write-y y)
+      ;; Reset whether we moved this tick or not
+      ($ moved-this-tick? #f)]
+     [(move-up)
+      (unless (or ($ moved-this-tick?)
+                  (>= y (sub1 LEVEL-HEIGHT)))
+        ($ moved-this-tick? #t)
+        (bcom ^next (add1 y)))]
+     [(move-down)
+      (unless (or ($ moved-this-tick?)
+                  (<= y 0))
+        ($ moved-this-tick? #t)
+        (bcom ^next (sub1 y)))]
+     [(fire)
+      (unless ($ moved-this-tick?)
+        ($ moved-this-tick? #t)
+        'TODO)]
+     [(die)
+      'TODO]))
+  (^next bcom y))
+
+(define (^bullet bcom env write-bullet-key start-x start-y)
   'TODO)
 
 (define (^starfield bcom)
@@ -73,17 +102,42 @@
   )
 
 (define LEVEL-WIDTH 50)
-(define LEVEL-HEIGHT 12)
+(define LEVEL-HEIGHT 13)
 
 (define (^level bcom spawn-ticked display-cell env)
+  (match-define (list level-ticker-register level-ticker-tick)
+    (spawn-ticker-pair))
+  (define level-spawn-ticked
+    (make-spawn-ticked level-ticker-register))
+
+  ;; Define the player and spawn a ticked facet of it
+  (define player-y
+    (spawn ^cell))
+  (define player-ship
+    (spawn ^player-ship player-y
+           level-spawn-ticked))
+  (define ((^tick-player bcom))
+    ($ player-ship 'tick))
+  (level-spawn-ticked ^tick-player)
+  
   (lambda () 
+    ;; Tick all the level items
+    ($ level-ticker-tick)
+
+    ;; Build display
     (define (do-display)
+      
+      
       (raart:vappend
        #:halign 'center
        (raart:text ".-*[    SPAAAACE!    ]*-.")
        (raart:frame
-        
-        (raart:blank 50 12))
+        ;; Blit the player ship
+        (raart:place-at
+         (raart:blank 50 12)
+         ($ player-y) 1
+         (raart:fg 'yellow
+                   (raart:char #\>))))
        (raart:place-at
         (raart:place-at
          (raart:blank 50 2)
@@ -98,6 +152,8 @@
          (raart:text "LIVES:   3")
          (raart:text "LEVEL:   1")))))
     ($ display-cell do-display)
+    
+    ;; we're done
     (void)))
 
 
