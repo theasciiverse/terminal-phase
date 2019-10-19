@@ -10,7 +10,8 @@
          goblins/actor-lib/env
          goblins/actor-lib/ticker
          goblins/actor-lib/facet
-         goblins/actor-lib/mactor)
+         goblins/actor-lib/mactor
+         goblins/actor-lib/imply-method)
 
 
 ;;; Sprites and other goblin'y things
@@ -116,11 +117,11 @@
   (define player-ship
     (spawn ^player-ship player-y
            level-spawn-ticked))
-  (define ((^tick-player bcom))
-    ($ player-ship 'tick))
-  (level-spawn-ticked ^tick-player)
+  (level-spawn-ticked ^imply-method player-ship 'tick
+                      'tick-player-ship)
   
-  (lambda () 
+  (mactor
+   [(tick)
     ;; Tick all the level items
     ($ level-ticker-tick)
 
@@ -141,7 +142,7 @@
          (raart:blank 50 2)
          0 (- 50 18) ; 18 is width of HI-SCORE + zeroes
          (raart:vappend
-          #:halign 'right
+         #:halign 'right
           (raart:text "SCORE: 00000000")
           (raart:text "HI-SCORE: 00000000")))
         0 0
@@ -152,7 +153,9 @@
     ($ display-cell do-display)
     
     ;; we're done
-    (void)))
+    (void)]
+   [(handle-input input)
+    'TODO]))
 
 
 ;;; Game infrastructure
@@ -259,7 +262,9 @@
       (spawn-ticker-pair))
     (define spawn-ticked
       (make-spawn-ticked ticker-register))
-    (spawn-ticked ^level spawn-ticked display-cell env)
+    (define level
+      (spawn ^level spawn-ticked display-cell env))
+    (spawn-ticked ^imply-method level 'tick 'level-tick)
     (game actormap ticker-tick reset-env display-cell rows cols))
   (actormap-run! actormap make-new-game))
 
