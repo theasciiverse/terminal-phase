@@ -150,8 +150,10 @@
         0 0
         (raart:vappend
          #:halign 'left
-         (raart:text "LIVES:   3")
-         (raart:text "LEVEL:   1")))))
+         (raart-labeled-val "LIVES" "3"
+                            #:goal-width 10)
+         (raart-labeled-val "LEVEL" "1"
+                            #:goal-width 10)))))
     ($ display-cell do-display)
     
     ;; we're done
@@ -287,7 +289,8 @@
                        (string-append label
                                       ":")))
    (horizontal-whitespace blank-space-size)
-   (raart:text val)))
+   (raart:fg 'white
+             (raart:text val))))
 
 
 
