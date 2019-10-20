@@ -127,24 +127,26 @@
 
     ;; Build display
     (define (do-display)
+
       (raart:vappend
        #:halign 'center
-       (raart:text ".-*[    SPAAAACE!    ]*-.")
+       (raart:fg 'brwhite
+                 (raart:text ".-*[    SPAAAACE!    ]*-."))
        (raart:frame
         ;; Blit the player ship
         (raart:place-at
-         (raart:blank 50 12)
+         (raart:blank LEVEL-WIDTH LEVEL-HEIGHT)
          ($ player-y) 1
-         (raart:fg 'yellow
+         (raart:fg 'bryellow
                    (raart:char #\>))))
        (raart:place-at
         (raart:place-at
-         (raart:blank 50 2)
-         0 (- 50 18) ; 18 is width of HI-SCORE + zeroes
+         (raart:blank LEVEL-WIDTH 2)
+         0 (- LEVEL-WIDTH 18) ; 18 is width of HI-SCORE + zeroes
          (raart:vappend
-         #:halign 'right
-          (raart:text "SCORE: 00000000")
-          (raart:text "HI-SCORE: 00000000")))
+          #:halign 'right
+          (raart-labeled-val "SCORE" "00000000")
+          (raart-labeled-val "HI-SCORE" "00000000")))
         0 0
         (raart:vappend
          #:halign 'left
@@ -267,6 +269,27 @@
     (spawn-ticked ^imply-method level 'tick 'level-tick)
     (game actormap ticker-tick reset-env display-cell rows cols))
   (actormap-run! actormap make-new-game))
+
+
+;;; Some raart utilities
+;;;
+
+(define (raart-labeled-val label val #:goal-width [goal-width 18])
+  (define (horizontal-whitespace len)
+    (raart:blank len 1))
+  (define blank-space-size
+    (max 1 (- goal-width
+              (string-length label)
+              (string-length val)
+              1)))
+  (raart:happend
+   (raart:fg 'brwhite (raart:text
+                       (string-append label
+                                      ":")))
+   (horizontal-whitespace blank-space-size)
+   (raart:text val)))
+
+
 
 (define (display* . things)
   (for-each display things)
