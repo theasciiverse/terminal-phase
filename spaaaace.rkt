@@ -4,15 +4,16 @@
          ansi
          lux
          ;; debugging
-         pk)
+         pk
 
-(require goblins
+         goblins
          goblins/actor-lib/env
          goblins/actor-lib/ticker
          goblins/actor-lib/facet
          goblins/actor-lib/mactor
-         goblins/actor-lib/imply-method)
+         goblins/actor-lib/imply-method
 
+         "raart-render.rkt")
 
 ;;; Sprites and other goblin'y things
 ;;; =================================
@@ -177,16 +178,6 @@
                     (raart:blank 0 0)))
     0 0)))
 
-(define (val->raart val)
-  (match val
-    [(? raart:raart?) val]
-    [(? procedure?) (val)]))
-
-(define (list->raart lst)
-  (map (lambda (v)
-         (val->raart v))
-       lst))
-
 ;;; Each column is a single column of current terrain.
 ;;; They're happend'ed together.
 
@@ -271,27 +262,6 @@
     (spawn-ticked ^imply-method level 'tick 'level-tick)
     (game actormap ticker-tick reset-env display-cell rows cols))
   (actormap-run! actormap make-new-game))
-
-
-;;; Some raart utilities
-;;;
-
-(define (raart-labeled-val label val #:goal-width [goal-width 18])
-  (define (horizontal-whitespace len)
-    (raart:blank len 1))
-  (define blank-space-size
-    (max 1 (- goal-width
-              (string-length label)
-              (string-length val)
-              1)))
-  (raart:happend
-   (raart:fg 'brwhite (raart:text
-                       (string-append label
-                                      ":")))
-   (horizontal-whitespace blank-space-size)
-   (raart:fg 'white
-             (raart:text val))))
-
 
 
 (define (display* . things)
