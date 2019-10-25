@@ -10,7 +10,7 @@
          goblins/actor-lib/env
          goblins/actor-lib/ticker
          goblins/actor-lib/facet
-         goblins/actor-lib/mactor
+         goblins/actor-lib/methods
          goblins/actor-lib/imply-method
 
          "raart-render.rkt")
@@ -24,7 +24,7 @@
     (spawn ^cell #f))
 
   (define (^next bcom y)
-    (mactor
+    (methods
      [(tick)
       ;; Write out our y position
       ($ write-y y)
@@ -121,7 +121,7 @@
   (level-spawn-ticked ^imply-method player-ship 'tick
                       'tick-player-ship)
   
-  (mactor
+  (methods
    [(tick)
     ;; Tick all the level items
     ($ level-ticker-tick)
