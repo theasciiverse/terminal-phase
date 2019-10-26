@@ -19,7 +19,7 @@
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
-(define (^player-ship bcom write-y spawn-ticked
+(define (^player-ship bcom spawn-ticked
                       #:initial-y [y (floor (/ LEVEL-HEIGHT 2))])
   (define moved-this-tick?
     (spawn ^cell #f))
@@ -27,8 +27,6 @@
   (define (^next bcom y)
     (methods
      [(tick)
-      ;; Write out our y position
-      ($ write-y y)
       ;; Reset whether we moved this tick or not
       ($ moved-this-tick? #f)]
      [(move-up)
@@ -45,6 +43,8 @@
       (unless ($ moved-this-tick?)
         ($ moved-this-tick? #t)
         'TODO)]
+     [(get-y)
+      y]
      [(die)
       'TODO]))
   (^next bcom y))
@@ -107,18 +107,15 @@
 (define LEVEL-WIDTH 50)
 (define LEVEL-HEIGHT 13)
 
-(define (^level bcom display-cell env)
+(define (^level bcom env)
   (match-define (list level-ticker-register level-ticker-tick)
     (spawn-ticker-pair))
   (define level-spawn-ticked
     (make-spawn-ticked level-ticker-register))
 
   ;; Define the player and spawn a ticked facet of it
-  (define player-y
-    (spawn ^cell))
   (define player-ship
-    (spawn ^player-ship player-y
-           level-spawn-ticked))
+    (spawn ^player-ship level-spawn-ticked))
   (level-spawn-ticked ^imply-method player-ship 'tick
                       'tick-player-ship)
   
@@ -126,48 +123,55 @@
    [(tick)
     ;; Tick all the level items
     ($ level-ticker-tick)
-
-    ;; Build display
-    (define (do-display)
-
-      (raart:vappend
-       #:halign 'center
-       (raart:fg 'brwhite
-                 (raart:text ".-*[    SPAAAACE!    ]*-."))
-       (raart:frame
-        ;; Blit the player ship
-        (raart:place-at
-         (raart:blank LEVEL-WIDTH LEVEL-HEIGHT)
-         ($ player-y) 1
-         (raart:fg 'bryellow
-                   (raart:char #\>))))
-       (raart:place-at
-        (raart:place-at
-         (raart:blank LEVEL-WIDTH 2)
-         0 (- LEVEL-WIDTH 18) ; 18 is width of HI-SCORE + zeroes
-         (raart:vappend
-          #:halign 'right
-          (raart-labeled-val "SCORE" "00000000")
-          (raart-labeled-val "HI-SCORE" "00000000")))
-        0 0
-        (raart:vappend
-         #:halign 'left
-         (raart-labeled-val "LIVES" "3"
-                            #:goal-width 10)
-         (raart-labeled-val "LEVEL" "1"
-                            #:goal-width 10)))))
-    ($ display-cell do-display)
     
     ;; we're done
     (void)]
-   [(handle-input input)
+   [(render)
+    (raart:vappend
+     #:halign 'center
+     (raart:fg 'brwhite
+               (raart:text ".-*[    SPAAAACE!    ]*-."))
+     (raart:frame
+      ;; Blit the player ship
+      (raart:place-at
+       (raart:blank LEVEL-WIDTH LEVEL-HEIGHT)
+       ($ player-ship 'get-y) 1
+       (raart:fg 'bryellow
+                 (raart:char #\>))))
+     (raart:place-at
+      (raart:place-at
+       (raart:blank LEVEL-WIDTH 2)
+       0 (- LEVEL-WIDTH 18) ; 18 is width of HI-SCORE + zeroes
+       (raart:vappend
+        #:halign 'right
+        (raart-labeled-val "SCORE" "00000000")
+        (raart-labeled-val "HI-SCORE" "00000000")))
+      0 0
+      (raart:vappend
+       #:halign 'left
+       (raart-labeled-val "LIVES" "3"
+                          #:goal-width 10)
+       (raart-labeled-val "LEVEL" "1"
+                          #:goal-width 10))))]
+   [(handle-input evt)
     'TODO]))
 
+
+(define (^main-menu bcom dpr-pushdown)
+  (define (^next bcom [selection 0])
+    (methods
+     [(tick)
+      'TODO
+      ]
+     [(handle-input evt)
+      'TODO
+      ]))
+  (^next bcom))
 
 ;;; Game infrastructure
 ;;; ===================
 
-(define (raart-render-game get-game-display gw)
+(define (raart-render-game dispatcher gw)
   (define width
     (game-display-cols gw))
   (define height
@@ -175,7 +179,7 @@
   (raart:matte
    width height
    (raart:place-cursor-after
-    (val->raart (or ($ get-game-display)
+    (val->raart (or ($ dispatcher 'render)
                     (raart:blank 0 0)))
     0 0)))
 
@@ -189,8 +193,6 @@
    dispatcher
    ;; environment reset
    reset-env
-   ;; display object
-   display-obj
    ;; resolution info
    display-rows
    display-cols)
@@ -220,7 +222,7 @@
        [_ gw]))
    (define (word-output gw)
      (define (compose-display)
-       (raart-render-game (game-display-obj gw) gw))
+       (raart-render-game (game-dispatcher gw) gw))
      ;; Return the raart to be displayed.
      ;; Note that we use actormap-run rather than -run! because
      ;; there shouldn't be any applicable side effects.
@@ -250,16 +252,14 @@
 (define (new-game rows cols)
   (define actormap (make-actormap))
   (define (make-new-game)
-    (define display-cell
-      (spawn ^cell))
     (match-define (list env reset-env)
       (spawn-env-pair))
     (define level
-      (spawn ^level display-cell env))
+      (spawn ^level env))
     (match-define (list dispatcher-pushdown dispatcher)
       (spawn-pushdown-pair level))
 
-    (game actormap dispatcher reset-env display-cell rows cols))
+    (game actormap dispatcher reset-env rows cols))
   (actormap-run! actormap make-new-game))
 
 
