@@ -31,14 +31,14 @@
       ($ moved-this-tick? #f)]
      [(move-up)
       (unless (or ($ moved-this-tick?)
-                  (>= y (sub1 LEVEL-HEIGHT)))
-        ($ moved-this-tick? #t)
-        (bcom ^next (add1 y)))]
-     [(move-down)
-      (unless (or ($ moved-this-tick?)
                   (<= y 0))
         ($ moved-this-tick? #t)
         (bcom ^next (sub1 y)))]
+     [(move-down)
+      (unless (or ($ moved-this-tick?)
+                  (>= y (sub1 LEVEL-HEIGHT)))
+        ($ moved-this-tick? #t)
+        (bcom ^next (add1 y)))]
      [(fire)
       (unless ($ moved-this-tick?)
         ($ moved-this-tick? #t)
@@ -153,8 +153,14 @@
                           #:goal-width 10)
        (raart-labeled-val "LEVEL" "1"
                           #:goal-width 10))))]
-   [(handle-input evt)
-    'TODO]))
+   [(handle-event evt)
+    (match evt
+      ["<up>"
+       ($ player-ship 'move-up)]
+      ["<down>"
+       ($ player-ship 'move-down)]
+      [_ 'no-op])
+    ]))
 
 
 (define (^main-menu bcom dpr-pushdown)
@@ -163,7 +169,7 @@
      [(tick)
       'TODO
       ]
-     [(handle-input evt)
+     [(handle-event evt)
       'TODO
       ]))
   (^next bcom))
@@ -219,7 +225,13 @@
         (struct-copy game gw
                      [display-rows rows]
                      [display-cols cols])]
-       [_ gw]))
+       ;; Give it to the current dispatcher
+       [_
+        (define (dispatcher-handle-event!)
+          ($ (game-dispatcher gw) 'handle-event e))
+        (actormap-run! (game-actormap gw)
+                       dispatcher-handle-event!)
+        gw]))
    (define (word-output gw)
      (define (compose-display)
        (raart-render-game (game-dispatcher gw) gw))
