@@ -12,6 +12,7 @@
          goblins/actor-lib/facet
          goblins/actor-lib/methods
          goblins/actor-lib/imply-method
+         goblins/actor-lib/pushdown
 
          "raart-render.rkt")
 
@@ -106,7 +107,7 @@
 (define LEVEL-WIDTH 50)
 (define LEVEL-HEIGHT 13)
 
-(define (^level bcom spawn-ticked display-cell env)
+(define (^level bcom display-cell env)
   (match-define (list level-ticker-register level-ticker-tick)
     (spawn-ticker-pair))
   (define level-spawn-ticked
@@ -184,8 +185,8 @@
 (struct game
   (;; actormap of participants
    actormap
-   ;; ticker
-   ticker
+   ;; dispatcher of ticks, events
+   dispatcher
    ;; environment reset
    reset-env
    ;; display object
@@ -197,14 +198,14 @@
   [(define (word-tick gw)
      ;; Actors we'll call
      (define reset-env (game-reset-env gw))
-     (define ticker (game-ticker gw))
+     (define dispatcher (game-dispatcher gw))
      ;; Transactionally update actors for this tick.
      ;; Either all of this succeeds or nothing succeeds.
      (define (transactional-update!)
        ;; reset the environment
        ($ reset-env)
        ;; run all objects
-       ($ ticker))
+       ($ dispatcher 'tick))
      (actormap-run! (game-actormap gw)
                     transactional-update!)
      gw)
@@ -253,14 +254,12 @@
       (spawn ^cell))
     (match-define (list env reset-env)
       (spawn-env-pair))
-    (match-define (list ticker-register ticker-tick)
-      (spawn-ticker-pair))
-    (define spawn-ticked
-      (make-spawn-ticked ticker-register))
     (define level
-      (spawn ^level spawn-ticked display-cell env))
-    (spawn-ticked ^imply-method level 'tick 'level-tick)
-    (game actormap ticker-tick reset-env display-cell rows cols))
+      (spawn ^level display-cell env))
+    (match-define (list dispatcher-pushdown dispatcher)
+      (spawn-pushdown-pair level))
+
+    (game actormap dispatcher reset-env display-cell rows cols))
   (actormap-run! actormap make-new-game))
 
 
