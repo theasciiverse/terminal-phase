@@ -19,16 +19,22 @@
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
-(define (^player-ship bcom spawn-ticked
+(define (^player-ship bcom spawn-ticked env write-bullet-key
                       #:initial-y [y (floor (/ LEVEL-HEIGHT 2))])
   (define moved-this-tick?
     (spawn ^cell #f))
+
+  (define fire-cooldown
+    (spawn ^cell 0))
 
   (define (^next bcom y)
     (methods
      [(tick)
       ;; Reset whether we moved this tick or not
-      ($ moved-this-tick? #f)]
+      ($ moved-this-tick? #f)
+      ;; Decrease the fire cooldown, if appropriate
+      (unless (= ($ fire-cooldown) 0)
+        ($ fire-cooldown (sub1 ($ fire-cooldown))))]
      [(move-up)
       (unless (or ($ moved-this-tick?)
                   (<= y 0))
@@ -40,17 +46,35 @@
         ($ moved-this-tick? #t)
         (bcom ^next (add1 y)))]
      [(fire)
-      (unless ($ moved-this-tick?)
+      (when (= ($ fire-cooldown) 0)
         ($ moved-this-tick? #t)
-        'TODO)]
+        (spawn-ticked ^bullet env write-bullet-key
+                      2 y)
+        ($ fire-cooldown 10))]
      [(get-y)
       y]
      [(die)
       'TODO]))
   (^next bcom y))
 
-(define (^bullet bcom env write-bullet-key start-x start-y)
-  'TODO)
+(define BULLET-COUNTDOWN 5)
+
+(define (^bullet bcom env write-bullet-key start-x y)
+  (define x
+    (spawn-cell start-x))
+  (define countdown
+    (spawn-cell BULLET-COUNTDOWN))
+  (methods
+   [(tick)
+    ;; advance x if appropriate
+    (cond
+      [(= ($ countdown) 0)
+       ($ x (add1 ($ x)))
+       ($ countdown BULLET-COUNTDOWN)]
+      [else
+       ($ countdown (sub1 ($ countdown)))])
+
+    ($ env write-bullet-key ($ x) y)]))
 
 (define (^starfield bcom)
   'TODO)
@@ -109,16 +133,19 @@
 
 (define (^level bcom env)
   (match-define (list level-ticker-register level-ticker-tick)
-    (spawn-ticker-pair))
+    (spawn-ticker-pair #:method 'tick))
   (define level-spawn-ticked
     (make-spawn-ticked level-ticker-register))
 
+  (define player-bullet-key
+    ($ env 'new-key 'bullet-pos))
+
   ;; Define the player and spawn a ticked facet of it
   (define player-ship
-    (spawn ^player-ship level-spawn-ticked))
-  (level-spawn-ticked ^imply-method player-ship 'tick
-                      'tick-player-ship)
-  
+    (level-spawn-ticked ^player-ship
+                        level-spawn-ticked env
+                        player-bullet-key))
+
   (methods
    [(tick)
     ;; Tick all the level items
@@ -127,39 +154,50 @@
     ;; we're done
     (void)]
    [(render)
-    (raart:vappend
-     #:halign 'center
-     (raart:fg 'brwhite
-               (raart:text ".-*[    SPAAAACE!    ]*-."))
-     (raart:frame
+    (define header
+      (raart:fg 'brwhite
+                (raart:text ".-*[    SPAAAACE!    ]*-.")))
+    (define level-canvas
       ;; Blit the player ship
       (raart:place-at
        (raart:blank LEVEL-WIDTH LEVEL-HEIGHT)
        ($ player-ship 'get-y) 1
        (raart:fg 'bryellow
                  (raart:char #\>))))
-     (raart:place-at
+    (define footer
       (raart:place-at
-       (raart:blank LEVEL-WIDTH 2)
-       0 (- LEVEL-WIDTH 18) ; 18 is width of HI-SCORE + zeroes
+       (raart:place-at
+        (raart:blank LEVEL-WIDTH 2)
+        0 (- LEVEL-WIDTH 18) ; 18 is width of HI-SCORE + zeroes
+        (raart:vappend
+         #:halign 'right
+         (raart-labeled-val "SCORE" "00000000")
+         (raart-labeled-val "HI-SCORE" "00000000")))
+       0 0
        (raart:vappend
-        #:halign 'right
-        (raart-labeled-val "SCORE" "00000000")
-        (raart-labeled-val "HI-SCORE" "00000000")))
-      0 0
-      (raart:vappend
-       #:halign 'left
-       (raart-labeled-val "LIVES" "3"
-                          #:goal-width 10)
-       (raart-labeled-val "LEVEL" "1"
-                          #:goal-width 10))))]
+        #:halign 'left
+        (raart-labeled-val "LIVES" "3"
+                           #:goal-width 10)
+        (raart-labeled-val "LEVEL" "1"
+                           #:goal-width 10))))
+    
+    (raart:vappend
+     #:halign 'center
+     header
+     (raart:frame level-canvas)
+     footer)]
+
    [(handle-event evt)
     (match evt
       ["<up>"
        ($ player-ship 'move-up)]
       ["<down>"
        ($ player-ship 'move-down)]
-      [_ 'no-op])
+      [" "
+       ($ player-ship 'fire)]
+      [_
+       (pk 'evt evt)
+       'no-op])
     ]))
 
 
