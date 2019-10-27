@@ -32,6 +32,7 @@
      [(tick)
       ;; Reset whether we moved this tick or not
       ($ moved-this-tick? #f)
+
       ;; Decrease the fire cooldown, if appropriate
       (unless (= ($ fire-cooldown) 0)
         ($ fire-cooldown (sub1 ($ fire-cooldown))))]
@@ -47,7 +48,6 @@
         (bcom ^next (add1 y)))]
      [(fire)
       (when (= ($ fire-cooldown) 0)
-        ($ moved-this-tick? #t)
         (spawn-ticked ^bullet env write-bullet-key
                       2 y)
         ($ fire-cooldown 10))]
@@ -57,7 +57,7 @@
       'TODO]))
   (^next bcom y))
 
-(define BULLET-COUNTDOWN 5)
+(define BULLET-COUNTDOWN 2)
 
 (define (^bullet bcom env write-bullet-key start-x y)
   (define x
@@ -74,7 +74,12 @@
       [else
        ($ countdown (sub1 ($ countdown)))])
 
-    ($ env write-bullet-key ($ x) y)]))
+    (if (>= ($ x) LEVEL-WIDTH)
+        ;; we've gone too far
+        'die
+        ;; otherwise, write out where we're at
+        ($ env 'write write-bullet-key
+           (vector ($ x) y)))]))
 
 (define (^starfield bcom)
   'TODO)
@@ -157,13 +162,25 @@
     (define header
       (raart:fg 'brwhite
                 (raart:text ".-*[    SPAAAACE!    ]*-.")))
-    (define level-canvas
+    (define blank-level-canvas
+      (raart:blank LEVEL-WIDTH LEVEL-HEIGHT))
+    (define canvas+player
       ;; Blit the player ship
       (raart:place-at
-       (raart:blank LEVEL-WIDTH LEVEL-HEIGHT)
+       blank-level-canvas
        ($ player-ship 'get-y) 1
        (raart:fg 'bryellow
                  (raart:char #\>))))
+    (define canvas+player-bullets
+      (for/fold ([canvas canvas+player])
+                ([bullet-info ($ env 'read player-bullet-key)])
+        (match bullet-info
+          [(vector x y)
+           (raart:place-at canvas y x
+                           (raart:fg 'yellow
+                                     (raart:char #\=)))])))
+    
+    (define level-canvas canvas+player-bullets)
     (define footer
       (raart:place-at
        (raart:place-at
@@ -196,7 +213,6 @@
       [" "
        ($ player-ship 'fire)]
       [_
-       (pk 'evt evt)
        'no-op])
     ]))
 
@@ -287,7 +303,7 @@
      ;; 30?  60???
      ;; probably 30 is something terminals can reliably
      ;; keep up with...
-     30.0)
+     60.0)
    (define (word-return gw)
      (void))])
 
