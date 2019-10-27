@@ -57,7 +57,7 @@
       'TODO]))
   (^next bcom y))
 
-(define BULLET-COUNTDOWN 2)
+(define BULLET-COUNTDOWN 1)
 
 (define (^bullet bcom env write-bullet-key start-x y)
   (define x
