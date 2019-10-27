@@ -217,15 +217,47 @@
     ]))
 
 
-(define (^main-menu bcom dpr-pushdown)
+(define (^main-menu bcom dpr-pushdown env)
+  (define menu-options
+    #("Play game!"
+      "Help"))
+
   (define (^next bcom [selection 0])
     (methods
      [(tick)
       'TODO
       ]
      [(handle-event evt)
-      'TODO
-      ]))
+      (match evt
+        ["<up>"
+         (bcom ^next (modulo (add1 selection)
+                             (vector-length menu-options)))]
+        ["<down>"
+         (bcom ^next (modulo (abs (sub1 selection))
+                             (vector-length menu-options)))]
+        [" "
+         ($ dpr-pushdown 'push (spawn ^level env))]
+        [_ 'no-op])]
+     [(render)
+      (define menu-items
+        (for/list ([option menu-options]
+                   [i (in-naturals)])
+          (if (= i selection)
+              (raart:fg 'bryellow
+                        (raart:text
+                         (string-append ">> "
+                                        option
+                                        " <<")))
+              (raart:fg 'white
+                        (raart:text option)))))
+      (raart:vappend
+       #:halign 'center
+       (raart:text "SPAAAACE!  (Main menu!)")
+       (raart:blank 0 5)
+       (apply
+        raart:vappend
+        #:halign 'center
+        menu-items))]))
   (^next bcom))
 
 ;;; Game infrastructure
@@ -320,10 +352,13 @@
   (define (make-new-game)
     (match-define (list env reset-env)
       (spawn-env-pair))
-    (define level
+    #;(define level
       (spawn ^level env))
     (match-define (list dispatcher-pushdown dispatcher)
-      (spawn-pushdown-pair level))
+      (spawn-pushdown-pair))
+    (define main-menu
+      (spawn ^main-menu dispatcher-pushdown env))
+    ($ dispatcher-pushdown 'push main-menu)
 
     (game actormap dispatcher reset-env rows cols))
   (actormap-run! actormap make-new-game))
