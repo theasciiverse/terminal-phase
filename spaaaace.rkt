@@ -8,7 +8,7 @@
 
          goblins
          goblins/actor-lib/env
-         goblins/actor-lib/ticker
+         goblins/actor-lib/ticker2
          goblins/actor-lib/facet
          goblins/actor-lib/methods
          goblins/actor-lib/imply-method
@@ -19,7 +19,7 @@
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
-(define (^player-ship bcom spawn-ticked env write-bullet-key
+(define (^player-ship bcom ticky env write-bullet-key
                       #:initial-y [y (floor (/ LEVEL-HEIGHT 2))])
   (define moved-this-tick?
     (spawn ^cell #f))
@@ -48,8 +48,8 @@
         (bcom ^next (add1 y)))]
      [(fire)
       (when (= ($ fire-cooldown) 0)
-        (spawn-ticked ^bullet env write-bullet-key
-                      2 y)
+        ($ ticky 'spawn ^bullet env write-bullet-key
+           2 y)
         ($ fire-cooldown 10))]
      [(get-y)
       y]
@@ -59,7 +59,7 @@
 
 (define BULLET-COUNTDOWN 1)
 
-(define (^bullet bcom env write-bullet-key start-x y)
+(define (^bullet bcom ticky env write-bullet-key start-x y)
   (define x
     (spawn-cell start-x))
   (define countdown
@@ -76,7 +76,7 @@
 
     (if (>= ($ x) LEVEL-WIDTH)
         ;; we've gone too far
-        'die
+        ($ ticky 'die)
         ;; otherwise, write out where we're at
         ($ env 'write write-bullet-key
            (vector ($ x) y)))]))
@@ -137,24 +137,21 @@
 (define LEVEL-HEIGHT 13)
 
 (define (^level bcom env dpr-pushdown)
-  (match-define (list level-ticker-register level-ticker-tick)
-    (spawn-ticker-pair))
-  (define level-spawn-ticked
-    (make-spawn-ticked level-ticker-register))
+  (define level-ticker (spawn-ticker))
 
   (define player-bullet-key
     ($ env 'new-key 'bullet-pos))
 
   ;; Define the player and spawn a ticked facet of it
   (define player-ship
-    (level-spawn-ticked ^player-ship
-                        level-spawn-ticked env
-                        player-bullet-key))
+    ($ level-ticker 'spawn
+       ^player-ship env
+       player-bullet-key))
 
   (methods
    [(tick)
     ;; Tick all the level items
-    ($ level-ticker-tick 'tick)
+    ($ level-ticker 'tick 'tick)
     
     ;; we're done
     (void)]
