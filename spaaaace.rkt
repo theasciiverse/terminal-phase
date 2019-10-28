@@ -138,7 +138,7 @@
 
 (define (^level bcom env dpr-pushdown)
   (match-define (list level-ticker-register level-ticker-tick)
-    (spawn-ticker-pair #:method 'tick))
+    (spawn-ticker-pair))
   (define level-spawn-ticked
     (make-spawn-ticked level-ticker-register))
 
@@ -154,7 +154,7 @@
   (methods
    [(tick)
     ;; Tick all the level items
-    ($ level-ticker-tick)
+    ($ level-ticker-tick 'tick)
     
     ;; we're done
     (void)]
