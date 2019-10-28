@@ -136,7 +136,7 @@
 (define LEVEL-WIDTH 50)
 (define LEVEL-HEIGHT 13)
 
-(define (^level bcom env)
+(define (^level bcom env dpr-pushdown)
   (match-define (list level-ticker-register level-ticker-tick)
     (spawn-ticker-pair #:method 'tick))
   (define level-spawn-ticked
@@ -212,6 +212,8 @@
        ($ player-ship 'move-down)]
       [" "
        ($ player-ship 'fire)]
+      ["q"
+       ($ dpr-pushdown 'pop)]
       [_
        'no-op])
     ]))
@@ -235,9 +237,12 @@
         ["<down>"
          (bcom ^next (modulo (abs (sub1 selection))
                              (vector-length menu-options)))]
-        [" "
-         ($ dpr-pushdown 'push (spawn ^level env))]
-        [_ 'no-op])]
+        [(or " " "C-M")
+         ($ dpr-pushdown 'push (spawn ^level env dpr-pushdown))]
+        ["q"
+         ($ dpr-pushdown 'pop)]
+        [_
+         'no-op])]
      [(render)
       (define menu-items
         (for/list ([option menu-options]
@@ -282,7 +287,9 @@
   (;; actormap of participants
    actormap
    ;; dispatcher of ticks, events
-   dispatcher
+   dispatch-stack
+   ;; pd automata pushdown (used to check if empty)
+   pushdown
    ;; environment reset
    reset-env
    ;; resolution info
@@ -292,21 +299,20 @@
   [(define (word-tick gw)
      ;; Actors we'll call
      (define reset-env (game-reset-env gw))
-     (define dispatcher (game-dispatcher gw))
+     (define dispatch-stack (game-dispatch-stack gw))
      ;; Transactionally update actors for this tick.
      ;; Either all of this succeeds or nothing succeeds.
      (define (transactional-update!)
        ;; reset the environment
        ($ reset-env)
        ;; run all objects
-       ($ dispatcher 'tick))
+       ($ dispatch-stack 'tick))
      (actormap-run! (game-actormap gw)
                     transactional-update!)
      gw)
    (define (word-event gw e)
      (match e
-       ;; quit
-       ["q" #f]
+       ;; update screen resolution
        [(screen-size-report rows cols)
         (struct-copy game gw
                      [display-rows rows]
@@ -314,13 +320,17 @@
        ;; Give it to the current dispatcher
        [_
         (define (dispatcher-handle-event!)
-          ($ (game-dispatcher gw) 'handle-event e))
+          ($ (game-dispatch-stack gw) 'handle-event e))
         (actormap-run! (game-actormap gw)
                        dispatcher-handle-event!)
-        gw]))
+        ;; quit if there's no dispatcher on the stack
+        (if (actormap-peek (game-actormap gw)
+                           (game-pushdown gw)
+                           'empty?)
+            #f gw)]))
    (define (word-output gw)
      (define (compose-display)
-       (raart-render-game (game-dispatcher gw) gw))
+       (raart-render-game (game-dispatch-stack gw) gw))
      ;; Return the raart to be displayed.
      ;; Note that we use actormap-run rather than -run! because
      ;; there shouldn't be any applicable side effects.
@@ -354,13 +364,15 @@
       (spawn-env-pair))
     #;(define level
       (spawn ^level env))
-    (match-define (list dispatcher-pushdown dispatcher)
+    (match-define (list dispatcher-pushdown dispatcher-forwarder)
       (spawn-pushdown-pair))
     (define main-menu
       (spawn ^main-menu dispatcher-pushdown env))
     ($ dispatcher-pushdown 'push main-menu)
 
-    (game actormap dispatcher reset-env rows cols))
+    (game actormap
+          dispatcher-forwarder dispatcher-pushdown
+          reset-env rows cols))
   (actormap-run! actormap make-new-game))
 
 
