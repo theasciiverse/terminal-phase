@@ -384,11 +384,11 @@
   (tty-raw!)
   (display* (dec-soft-terminal-reset)
             (device-request-screen-size))
-  (match-define (screen-size-report rows columns)
+  #;(match-define (screen-size-report rows columns)
     (lex-lcd-input (current-input-port)))
   (define proc-result
-    (proc rows columns))
-  (display* (dec-soft-terminal-reset)
+    (proc 24 80))
+  #;(display* (dec-soft-terminal-reset)
             (clear-screen/home))
   proc-result)
 
