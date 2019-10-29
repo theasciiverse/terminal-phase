@@ -70,7 +70,7 @@
            (lambda (ticky)
              (spawn ^player-bullet ticky
                     env write-bullet-key
-                    2 y)))
+                    1 y)))
         ($ fire-cooldown 10))]
      [(posinfo)
       (posinfo 1 y
@@ -101,12 +101,17 @@
       ($ ticky 'die))
     (void)]
    [(posinfo)
-    (list (posinfo ($ x) y
-                   #\= 'yellow
-                   'player-bullet)
-          (posinfo (sub1 ($ x)) y
-                   #\- 'yellow
-                   'player-bullet))]))
+    ;; Write head only if it hasn't gone oob
+    (define cur-x ($ x))
+    (define head
+      (posinfo (add1 ($ x)) y #\=
+               'yellow 'player-bullet))
+    (define tail
+      (posinfo ($ x) y #\-
+               'yellow 'player-bullet))
+    (if (< (add1 cur-x) LEVEL-WIDTH)
+        (list tail head)
+        tail)]))
 
 (define (^starfield bcom)
   'TODO)
