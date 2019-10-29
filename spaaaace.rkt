@@ -16,6 +16,24 @@
 
          "raart-render.rkt")
 
+;;; Position/rendering/collision info
+;;; =================================
+
+(struct posinfo
+  (x y              ; x & y coords
+   char color       ; character and color
+   layer-type))     ; used both for rendering-order and collision category
+
+(define render-layer-order
+  '(terrain
+    powerup
+    explosion
+    enemy
+    enemy-bullet
+    player-bullet
+    player))
+
+
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
@@ -50,17 +68,20 @@
       (when (= ($ fire-cooldown) 0)
         ($ ticky 'to-tick
            (lambda (ticky)
-             (spawn ^bullet ticky
+             (spawn ^player-bullet ticky
                     env write-bullet-key
                     2 y)))
         ($ fire-cooldown 10))]
-     [(get-y)
-      y]))
+     [(posinfo)
+      (posinfo 1 y
+               #\> 'bryellow
+               'player)]))
   (^next bcom y))
 
 (define BULLET-COUNTDOWN 1)
 
-(define (^bullet bcom ticky env write-bullet-key start-x y)
+(define (^player-bullet bcom ticky env write-bullet-key
+                        start-x y)
   (define x
     (spawn-cell start-x))
   (define countdown
@@ -75,12 +96,14 @@
       [else
        ($ countdown (sub1 ($ countdown)))])
 
-    (if (>= ($ x) LEVEL-WIDTH)
-        ;; we've gone too far
-        ($ ticky 'die)
-        ;; otherwise, write out where we're at
-        ($ env 'write write-bullet-key
-           (vector ($ x) y)))]))
+    (when (>= ($ x) LEVEL-WIDTH)
+      ;; we've gone too far
+      ($ ticky 'die))
+    (void)]
+   [(posinfo)
+    (posinfo ($ x) y
+             #\= 'yellow
+             'player-bullet)]))
 
 (define (^starfield bcom)
   'TODO)
@@ -163,23 +186,37 @@
                 (raart:text ".-*[    SPAAAACE!    ]*-.")))
     (define blank-level-canvas
       (raart:blank LEVEL-WIDTH LEVEL-HEIGHT))
-    (define canvas+player
-      ;; Blit the player ship
-      (raart:place-at
-       blank-level-canvas
-       ($ player-ship 'get-y) 1
-       (raart:fg 'bryellow
-                 (raart:char #\>))))
-    (define canvas+player-bullets
-      (for/fold ([canvas canvas+player])
-                ([bullet-info ($ env 'read player-bullet-key)])
-        (match bullet-info
-          [(vector x y)
-           (raart:place-at canvas y x
-                           (raart:fg 'yellow
-                                     (raart:char #\=)))])))
     
-    (define level-canvas canvas+player-bullets)
+    (define blit-layers
+      ($ level-ticker 'foldr
+         (lambda (ticked layers)
+           (define (add-to-layers posinfo layers)
+             (define layer
+               (posinfo-layer-type posinfo))
+             (define current-occupants
+               (hash-ref layers layer '()))
+             (hash-set layers layer
+                       (cons posinfo current-occupants)))
+           (match ($ ticked 'posinfo)
+             ;; nothing to do
+             [(or '() #f)
+              layers]
+             [(list posinfos ...)
+              (foldl add-to-layers layers posinfos)]
+             [posinfo (add-to-layers posinfo layers)]))
+         #hasheq()))
+
+    (define level-canvas
+      (for/fold ([canvas blank-level-canvas])
+                ([layer render-layer-order])
+        (for/fold ([canvas canvas])
+                  ([this-posinfo (hash-ref blit-layers layer '())])
+          (match-define (posinfo x y char color layer-type)
+            this-posinfo)
+          (raart:place-at canvas y x
+                          (raart:fg color
+                                    (raart:char char))))))
+
     (define footer
       (raart:place-at
        (raart:place-at
