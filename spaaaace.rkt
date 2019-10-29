@@ -52,9 +52,7 @@
            2 y)
         ($ fire-cooldown 10))]
      [(get-y)
-      y]
-     [(die)
-      'TODO]))
+      y]))
   (^next bcom y))
 
 (define BULLET-COUNTDOWN 1)
