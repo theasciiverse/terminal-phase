@@ -91,7 +91,7 @@
     ;; advance x if appropriate
     (cond
       [(= ($ countdown) 0)
-       ($ x (add1 ($ x)))
+       ($ x (+ ($ x) 2))
        ($ countdown BULLET-COUNTDOWN)]
       [else
        ($ countdown (sub1 ($ countdown)))])
@@ -101,9 +101,12 @@
       ($ ticky 'die))
     (void)]
    [(posinfo)
-    (posinfo ($ x) y
-             #\= 'yellow
-             'player-bullet)]))
+    (list (posinfo ($ x) y
+                   #\= 'yellow
+                   'player-bullet)
+          (posinfo (sub1 ($ x)) y
+                   #\- 'yellow
+                   'player-bullet))]))
 
 (define (^starfield bcom)
   'TODO)
@@ -381,7 +384,7 @@
      ;; 30?  60???
      ;; probably 30 is something terminals can reliably
      ;; keep up with...
-     60.0)
+     30.0)
    (define (word-return gw)
      (void))])
 
