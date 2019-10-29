@@ -406,7 +406,8 @@
        ;; run all objects
        ($ dispatch-stack 'tick))
      (actormap-run! (game-actormap gw)
-                    transactional-update!)
+                    transactional-update!
+                    #:reckless? #t)
      gw)
    (define (word-event gw e)
      (match e
@@ -420,7 +421,8 @@
         (define (dispatcher-handle-event!)
           ($ (game-dispatch-stack gw) 'handle-event e))
         (actormap-run! (game-actormap gw)
-                       dispatcher-handle-event!)
+                       dispatcher-handle-event!
+                       #:reckless? #t)
         ;; quit if there's no dispatcher on the stack
         (if (actormap-peek (game-actormap gw)
                            (game-pushdown gw)
@@ -471,7 +473,8 @@
     (game actormap
           dispatcher-forwarder dispatcher-pushdown
           reset-env rows cols))
-  (actormap-run! actormap make-new-game))
+  (actormap-run! actormap make-new-game
+                 #:reckless? #t))
 
 
 (define (display* . things)
