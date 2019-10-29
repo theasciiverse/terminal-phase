@@ -48,8 +48,11 @@
         (bcom ^next (add1 y)))]
      [(fire)
       (when (= ($ fire-cooldown) 0)
-        ($ ticky 'spawn ^bullet env write-bullet-key
-           2 y)
+        ($ ticky 'to-tick
+           (lambda (ticky)
+             (spawn ^bullet ticky
+                    env write-bullet-key
+                    2 y)))
         ($ fire-cooldown 10))]
      [(get-y)
       y]))
@@ -142,9 +145,10 @@
 
   ;; Define the player and spawn a ticked facet of it
   (define player-ship
-    ($ level-ticker 'spawn
-       ^player-ship env
-       player-bullet-key))
+    ($ level-ticker 'to-tick
+       (lambda (ticky)
+         (spawn ^player-ship ticky env
+                player-bullet-key))))
 
   (methods
    [(tick)
