@@ -7,7 +7,6 @@
          pk
 
          goblins
-         goblins/actor-lib/env
          goblins/actor-lib/ticker2
          goblins/actor-lib/facet
          goblins/actor-lib/methods
@@ -37,7 +36,7 @@
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
-(define (^player-ship bcom ticky env write-bullet-key
+(define (^player-ship bcom ticky
                       #:initial-y [y (floor (/ LEVEL-HEIGHT 2))])
   (define moved-this-tick?
     (spawn ^cell #f))
@@ -69,7 +68,6 @@
         ($ ticky 'to-tick
            (lambda (ticky)
              (spawn ^player-bullet ticky
-                    env write-bullet-key
                     1 y)))
         ($ fire-cooldown 10))]
      [(posinfo)
@@ -86,7 +84,7 @@
 
 (define BULLET-COUNTDOWN 1)
 
-(define (^player-bullet bcom ticky env write-bullet-key
+(define (^player-bullet bcom ticky
                         start-x y)
   (define x
     (spawn-cell start-x))
@@ -124,6 +122,7 @@
        ;; time to die
        'TODO]
       [_ 'no-op])]))
+
 
 (define (^starfield bcom)
   'TODO)
@@ -180,18 +179,14 @@
 (define LEVEL-WIDTH 50)
 (define LEVEL-HEIGHT 13)
 
-(define (^level bcom env dpr-pushdown)
+(define (^level bcom dpr-pushdown)
   (define level-ticker (spawn-ticker))
-
-  (define player-bullet-key
-    ($ env 'new-key 'bullet-pos))
 
   ;; Define the player and spawn a ticked facet of it
   (define player-ship
     ($ level-ticker 'to-tick
        (lambda (ticky)
-         (spawn ^player-ship ticky env
-                player-bullet-key))))
+         (spawn ^player-ship ticky))))
 
   (methods
    [(tick)
@@ -317,7 +312,7 @@
     ]))
 
 
-(define (^main-menu bcom dpr-pushdown env)
+(define (^main-menu bcom dpr-pushdown)
   (define menu-options
     #("Play game!"
       "Help"))
@@ -336,7 +331,7 @@
          (bcom ^next (modulo (abs (sub1 selection))
                              (vector-length menu-options)))]
         [(or " " "C-M")
-         ($ dpr-pushdown 'push (spawn ^level env dpr-pushdown))]
+         ($ dpr-pushdown 'push (spawn ^level dpr-pushdown))]
         ["q"
          ($ dpr-pushdown 'pop)]
         [_
@@ -388,25 +383,20 @@
    dispatch-stack
    ;; pd automata pushdown (used to check if empty)
    pushdown
-   ;; environment reset
-   reset-env
    ;; resolution info
    display-rows
    display-cols)
   #:methods gen:word
   [(define (word-tick gw)
      ;; Actors we'll call
-     (define reset-env (game-reset-env gw))
      (define dispatch-stack (game-dispatch-stack gw))
      ;; Transactionally update actors for this tick.
      ;; Either all of this succeeds or nothing succeeds.
-     (define (transactional-update!)
-       ;; reset the environment
-       ($ reset-env)
+     (define (update!)
        ;; run all objects
        ($ dispatch-stack 'tick))
      (actormap-run! (game-actormap gw)
-                    transactional-update!
+                    update!
                     #:reckless? #t)
      gw)
    (define (word-event gw e)
@@ -460,19 +450,15 @@
 (define (new-game rows cols)
   (define actormap (make-actormap))
   (define (make-new-game)
-    (match-define (list env reset-env)
-      (spawn-env-pair))
-    #;(define level
-      (spawn ^level env))
     (match-define (list dispatcher-pushdown dispatcher-forwarder)
       (spawn-pushdown-pair))
     (define main-menu
-      (spawn ^main-menu dispatcher-pushdown env))
+      (spawn ^main-menu dispatcher-pushdown))
     ($ dispatcher-pushdown 'push main-menu)
 
     (game actormap
           dispatcher-forwarder dispatcher-pushdown
-          reset-env rows cols))
+          rows cols))
   (actormap-run! actormap make-new-game
                  #:reckless? #t))
 
