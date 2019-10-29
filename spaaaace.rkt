@@ -22,7 +22,7 @@
 (struct posinfo
   (x y              ; x & y coords
    char color       ; character and color
-   layer-type))     ; used both for rendering-order and collision category
+   layer))          ; used both for rendering-order and collision category
 
 (define render-layer-order
   '(terrain
@@ -254,7 +254,7 @@
          (lambda (ticked layers)
            (define (add-to-layers posinfo layers)
              (define layer
-               (posinfo-layer-type posinfo))
+               (posinfo-layer posinfo))
              (define current-occupants
                (hash-ref layers layer '()))
              (hash-set layers layer
