@@ -75,7 +75,13 @@
      [(posinfo)
       (posinfo 1 y
                #\> 'bryellow
-               'player)]))
+               'player)]
+     [(collide with with-posinfo)
+      (match (posinfo-layer with-posinfo)
+        [(or 'enemy 'enemy-bullet 'terrain)
+         ;; time to die
+         'TODO]
+        [_ 'no-op])]))
   (^next bcom y))
 
 (define BULLET-COUNTDOWN 1)
@@ -111,7 +117,13 @@
                'yellow 'player-bullet))
     (if (< (add1 cur-x) LEVEL-WIDTH)
         (list tail head)
-        tail)]))
+        tail)]
+   [(collide with with-posinfo)
+    (match (posinfo-layer with-posinfo)
+      [(or 'enemy 'enemy-bullet 'terrain)
+       ;; time to die
+       'TODO]
+      [_ 'no-op])]))
 
 (define (^starfield bcom)
   'TODO)
@@ -185,6 +197,48 @@
    [(tick)
     ;; Tick all the level items
     ($ level-ticker 'tick 'tick)
+
+    ;; Calculate collisions and inform participants
+    (define level-vector
+      (make-vector (* LEVEL-WIDTH LEVEL-HEIGHT) '()))
+    ;; Fill vector 
+    ($ level-ticker 'foldr
+       (lambda (ticked _)
+         (define posinfos
+           (match ($ ticked 'posinfo)
+             [(list items ...)
+              items]
+             [posinfo (list posinfo)]))
+         (for [(this-posinfo posinfos)]
+           (define vector-pos
+             (+ (* LEVEL-HEIGHT (posinfo-y this-posinfo))
+                (posinfo-x this-posinfo)))
+           (vector-set! level-vector vector-pos
+                        (cons (vector ticked this-posinfo)
+                              (vector-ref level-vector vector-pos)))))
+       #f)
+    ;; Go through and inform of collisions
+    (for ([co-habitants level-vector]
+          [vec-i (in-naturals)])
+      (match co-habitants
+        ;; zero or more co-habitants is no real collision
+        ['()
+         'no-op]
+        [(list one-entity)
+         'no-op]
+        ;; ok, inform colliders
+        [_
+         (for ([this-inhabitant co-habitants])
+           (for ([other-inhabitant co-habitants])
+             ;; skip if the same
+             (unless (eq? this-inhabitant other-inhabitant)
+               ;; otherwise, inform me
+               (match-define (vector this-ticked this-posinfo)
+                 this-inhabitant)
+               (match-define (vector other-ticked other-posinfo)
+                 other-inhabitant)
+               ($ this-ticked 'collide
+                  other-ticked other-posinfo))))]))
     
     ;; we're done
     (void)]
