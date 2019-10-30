@@ -223,6 +223,8 @@
          'no-op]
         ;; ok, inform colliders
         [_
+         (define informed-collisions
+           (make-hasheq))
          (for ([this-inhabitant co-habitants])
            (for ([other-inhabitant co-habitants])
              ;; skip if the same
@@ -232,8 +234,18 @@
                  this-inhabitant)
                (match-define (vector other-ticked other-posinfo)
                  other-inhabitant)
-               ($ this-ticked 'collide
-                  other-ticked other-posinfo))))]))
+               ;; Set of objects this-ticked has already collided with
+               (define already-collided
+                 (if (hash-has-key? informed-collisions this-ticked)
+                     (hash-ref informed-collisions this-ticked)
+                     (let ([new-collided (mutable-seteq)])
+                       (hash-set! informed-collisions this-ticked
+                                  new-collided)
+                       new-collided)))
+               (unless (set-member? already-collided other-ticked)
+                 ($ this-ticked 'collide
+                    other-ticked other-posinfo)
+                 (set-add! already-collided other-ticked)))))]))
     
     ;; we're done
     (void)]
