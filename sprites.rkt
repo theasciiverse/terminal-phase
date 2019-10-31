@@ -7,6 +7,8 @@
          "posinfo.rkt"
          "level-const.rkt")
 
+(require pk)
+
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
