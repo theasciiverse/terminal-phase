@@ -48,6 +48,9 @@
 
 
 (define (^terrain bcom [terrain-vec empty-terrain-vector])
+  (define (terrain-ref x y)
+    (vector-ref (vector-ref terrain-vec x) y))
+
   (methods
    [(tick)
     'no-op]
@@ -59,16 +62,19 @@
    [(posinfo)
     (for/fold ([posinfos '()])
               ([col terrain-vec]
-               [col-i (in-naturals)])
+               [x (in-naturals)])
       (for/fold ([posinfos posinfos])
                 ([cell col]
-                 [row-i (in-naturals)])
-        (posinfo col-i row-i
-                 #\# 'red
-                 'terrain)))]
+                 [y (in-naturals)])
+        (if (terrain-ref x y)
+            (cons (posinfo x y
+                           #\# 'red
+                           'terrain)
+                  posinfos)
+            posinfos)))]
    ;; We're not the ones affected by a collision... the object
    ;; colliding is!
-   [(collide)
+   [(collide . _)
     'no-op]))
 
 ;; An actor that "eats" the tape one column at a time, until
@@ -91,6 +97,11 @@
     ($ level-ticker 'to-tick
        (lambda (ticky)
          (spawn ^player-ship ticky))))
+
+  (define terrain
+    ($ level-ticker 'to-tick
+       (lambda (ticky)
+         (spawn ^terrain))))
 
   ;; Calculate collisions and inform participants
   (define (do-collisions)
@@ -147,17 +158,33 @@
                     other-ticked other-posinfo)
                  (set-add! already-collided other-ticked)))))])))
 
-  (define (update-terrain)
-    (define column
+  (define (advance-level)
+    (define cells-column
       ($ tape-eater))
     ;; For now we loop forever.  This won't be the case later,
     ;; when levels will end.
-    (unless column
+    (unless cells-column
       (set! tape-eater
             (spawn ^tape-eater level-tape))
-      (set! column ($ tape-eater)))
+      (set! cells-column ($ tape-eater)))
 
-    'TODO)
+    (define level-right-x
+      (sub1 LEVEL-WIDTH))
+
+    ;; Now we walk through the column and build up the new
+    ;; terrain-col
+    (define terrain-col
+      (for/fold ([terrain-cells '()]
+                 #:result (list->vector
+                           (reverse terrain-cells)))
+                ([cell cells-column]
+                 [y (in-naturals)])
+        (match cell
+          [(cons #\# _)
+           (cons #t terrain-cells)]
+          [_ (cons #f terrain-cells)])))
+    
+    ($ terrain 'push-col terrain-col))
 
   (define TERRAIN-SPEED 5)
   (define (^next bcom [tape-countdown TERRAIN-SPEED])
@@ -168,7 +195,7 @@
 
       ;; maybe advance tape
       (when (zero? tape-countdown)
-        (update-terrain))
+        (advance-level))
 
       ;; collision detection time
       (do-collisions)
@@ -231,7 +258,7 @@
                              #:goal-width 10)
           (raart-labeled-val "LEVEL" "1"
                              #:goal-width 10))))
-      
+
       (raart:vappend
        #:halign 'center
        header

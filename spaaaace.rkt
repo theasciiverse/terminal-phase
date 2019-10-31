@@ -128,16 +128,11 @@
                      [display-cols cols])]
        ;; Give it to the current dispatcher
        [_
-        (pk 1)
         (define (dispatcher-handle-event!)
-          (pk 'handle)
-          ($ (pk 'gds (game-dispatch-stack gw)) 'handle-event e)
-          (pk 'it))
-        (pk 2)
+          ($ (game-dispatch-stack gw) 'handle-event e))
         (actormap-run! (game-actormap gw)
                        dispatcher-handle-event!
                        #:reckless? #t)
-        (pk 3)
         ;; quit if there's no dispatcher on the stack
         (if (actormap-peek (game-actormap gw)
                            (game-pushdown gw)
