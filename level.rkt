@@ -68,7 +68,7 @@
                  [y (in-naturals)])
         (if (terrain-ref x y)
             (cons (posinfo x y
-                           #\# 'red
+                           #\# 'white
                            'terrain)
                   posinfos)
             posinfos)))]
