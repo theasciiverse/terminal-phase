@@ -15,12 +15,12 @@
          "raart-render.rkt")
 
 (define render-layer-order
-  '(terrain
-    powerup
+  '(powerup
     explosion
     enemy
     enemy-bullet
     player-bullet
+    terrain
     player))
 
 (define (make-empty-terrain-vector)
