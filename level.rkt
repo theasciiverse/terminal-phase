@@ -117,8 +117,8 @@
              [posinfo (list posinfo)]))
          (for [(this-posinfo posinfos)]
            (define vector-pos
-             (+ (* LEVEL-HEIGHT (posinfo-y this-posinfo))
-                (posinfo-x this-posinfo)))
+             (+ (* LEVEL-HEIGHT (posinfo-x this-posinfo))
+                (posinfo-y this-posinfo)))
            (vector-set! level-vector vector-pos
                         (cons (vector ticked this-posinfo)
                               (vector-ref level-vector vector-pos)))))
