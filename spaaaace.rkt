@@ -194,7 +194,8 @@
   #;(match-define (screen-size-report rows columns)
     (lex-lcd-input (current-input-port)))
   (define proc-result
-    (proc 24 80))
+    #;(proc 24 80)
+    (proc 22 72))
   #;(display* (dec-soft-terminal-reset)
             (clear-screen/home))
   proc-result)
