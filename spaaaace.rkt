@@ -3,6 +3,8 @@
 (require (prefix-in raart: raart)
          ansi
          lux
+         racket/runtime-path
+
          ;; debugging
          pk
 
@@ -14,10 +16,14 @@
          goblins/actor-lib/pushdown
 
          "level-const.rkt"
+         "level-tape.rkt"
          "sprites.rkt"
          "posinfo.rkt"
          "raart-render.rkt"
          "level.rkt")
+
+(define-runtime-path pwd
+  ".")
 
 (define (^starfield bcom)
   'TODO)
@@ -41,7 +47,11 @@
          (bcom ^next (modulo (abs (sub1 selection))
                              (vector-length menu-options)))]
         [(or " " "C-M")
-         ($ dpr-pushdown 'push (spawn ^level dpr-pushdown))]
+         (define level-tape
+           (open-level-tape (build-path pwd "level1.txt")))
+         (define level
+           (spawn ^level level-tape dpr-pushdown))
+         ($ dpr-pushdown 'push level)]
         ["q"
          ($ dpr-pushdown 'pop)]
         [_
@@ -118,11 +128,16 @@
                      [display-cols cols])]
        ;; Give it to the current dispatcher
        [_
+        (pk 1)
         (define (dispatcher-handle-event!)
-          ($ (game-dispatch-stack gw) 'handle-event e))
+          (pk 'handle)
+          ($ (pk 'gds (game-dispatch-stack gw)) 'handle-event e)
+          (pk 'it))
+        (pk 2)
         (actormap-run! (game-actormap gw)
                        dispatcher-handle-event!
                        #:reckless? #t)
+        (pk 3)
         ;; quit if there's no dispatcher on the stack
         (if (actormap-peek (game-actormap gw)
                            (game-pushdown gw)
