@@ -94,5 +94,5 @@
     (match (posinfo-layer with-posinfo)
       [(or 'enemy 'enemy-bullet 'terrain)
        ;; time to die
-       'TODO]
+       ($ ticky 'die)]
       [_ 'no-op])]))
