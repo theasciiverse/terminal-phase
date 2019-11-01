@@ -7,6 +7,6 @@
 
 (define (oob? x y)
   (or (>= x LEVEL-WIDTH)
-      (<= x 0)
+      (< x 0)
       (>= y LEVEL-WIDTH)
-      (<= y 0)))
+      (< y 0)))
