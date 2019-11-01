@@ -51,6 +51,20 @@
   (define (terrain-ref x y)
     (vector-ref (vector-ref terrain-vec x) y))
 
+  (define posinfos
+    (for/fold ([posinfos '()])
+              ([col terrain-vec]
+               [x (in-naturals)])
+      (for/fold ([posinfos posinfos])
+                ([cell col]
+                 [y (in-naturals)])
+        (if (terrain-ref x y)
+            (cons (posinfo x y
+                           #\# 'red
+                           'terrain)
+                  posinfos)
+            posinfos))))
+
   (methods
    [(tick)
     'no-op]
@@ -60,18 +74,7 @@
     (bcom ^terrain (terrain-push-col terrain-vec col-vec))]
    ;; Write out the full terrain as a list
    [(posinfo)
-    (for/fold ([posinfos '()])
-              ([col terrain-vec]
-               [x (in-naturals)])
-      (for/fold ([posinfos posinfos])
-                ([cell col]
-                 [y (in-naturals)])
-        (if (terrain-ref x y)
-            (cons (posinfo x y
-                           #\# 'white
-                           'terrain)
-                  posinfos)
-            posinfos)))]
+    posinfos]
    ;; We're not the ones affected by a collision... the object
    ;; colliding is!
    [(collide . _)
@@ -182,11 +185,21 @@
         (match cell
           [(cons #\# _)
            (cons #t terrain-cells)]
-          [_ (cons #f terrain-cells)])))
+          [(cons tile-char flavor-char)
+           (match tile-char
+             [#\<
+              ($ level-ticker 'to-tick
+                 (lambda (ticky)
+                   (spawn ^enemy:< ticky level-right-x y
+                          flavor-char)))]
+             [_ 'no-op])
+           (cons #f terrain-cells)]
+          [#f
+           (cons #f terrain-cells)])))
     
     ($ terrain 'push-col terrain-col))
 
-  (define TERRAIN-SPEED 5)
+  (define TERRAIN-SPEED 6)
   (define (^next bcom [tape-countdown TERRAIN-SPEED])
     (methods
      [(tick)

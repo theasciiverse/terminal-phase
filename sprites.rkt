@@ -98,3 +98,51 @@
        ;; time to die
        ($ ticky 'die)]
       [_ 'no-op])]))
+
+
+;;; Enemies
+;;; =======
+
+(define enemy:<:move-speed
+  4)
+(define enemy:<:fire-speed
+  (* enemy:<:move-speed 10))
+
+(define (^enemy:< bcom ticky x y flavor)
+  (define (^next bcom
+                 x move-countdown fire-countdown)
+    (methods
+     [(tick)
+      (let ([x (if (zero? move-countdown)
+                   (sub1 x)
+                   x)])
+        (cond
+          ;; Left the screen?  time to die
+          [(oob? x y)
+           ($ ticky 'die)]
+          ;; Still on screen?  Guess we're still alive
+          [else
+           ;; Fire a bullet if it's bullet firing time
+           (when (zero? fire-countdown)
+             (let ([bullet-x (sub1 x)]
+                   [bullet-y y])
+               (unless (oob? bullet-x bullet-y)
+                 #;($ ticky 'to-tick
+                    (lambda (ticky)
+                      (spawn ^enemy-bullet ticky (sub1 x) y)))
+                 (pk 'firing))))
+
+           (bcom ^next x
+                 (modulo (sub1 move-countdown) enemy:<:move-speed)
+                 (modulo (sub1 move-countdown) enemy:<:fire-speed))]))]
+     [(posinfo)
+      (posinfo x y #\< 'brcyan
+               'enemy-bullet)]
+     [(collide with with-posinfo)
+      (match (posinfo-layer with-posinfo)
+        [(or 'player 'player-bullet 'terrain)
+         ;; time to die
+         ($ ticky 'die)]
+        [_ 'no-op])]))
+  (^next bcom x enemy:<:move-speed enemy:<:fire-speed))
+
