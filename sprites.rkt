@@ -104,9 +104,9 @@
 ;;; =======
 
 (define enemy:<:move-speed
-  4)
+  5)
 (define enemy:<:fire-speed
-  (* enemy:<:move-speed 10))
+  (* enemy:<:move-speed 20))
 
 (define (^enemy:< bcom ticky x y flavor)
   (define (^next bcom
@@ -127,16 +127,44 @@
              (let ([bullet-x (sub1 x)]
                    [bullet-y y])
                (unless (oob? bullet-x bullet-y)
-                 #;($ ticky 'to-tick
+                 ($ ticky 'to-tick
                     (lambda (ticky)
-                      (spawn ^enemy-bullet ticky (sub1 x) y)))
-                 (pk 'firing))))
+                      (spawn ^enemy-bullet ticky (sub1 x) y))))))
 
            (bcom ^next x
                  (modulo (sub1 move-countdown) enemy:<:move-speed)
-                 (modulo (sub1 move-countdown) enemy:<:fire-speed))]))]
+                 (modulo (sub1 fire-countdown) enemy:<:fire-speed))]))]
      [(posinfo)
       (posinfo x y #\< 'brcyan
+               'enemy)]
+     [(collide with with-posinfo)
+      (match (posinfo-layer with-posinfo)
+        [(or 'player-bullet)
+         ;; time to die
+         ($ ticky 'die)]
+        [_ 'no-op])]))
+  (^next bcom x enemy:<:move-speed (quotient enemy:<:fire-speed 2)))
+
+(define enemy-bullet:move-speed
+  2)
+
+(define (^enemy-bullet bcom ticky x y)
+  (define (^next bcom move-countdown x)
+    (methods
+     [(tick)
+      (define next-x
+        (if (zero? move-countdown)
+            (sub1 x)
+            x))
+      (cond
+        [(oob? next-x y)
+         ($ ticky 'die)]
+        [else
+         (bcom ^next
+               (modulo (sub1 move-countdown) enemy-bullet:move-speed)
+               next-x)])]
+     [(posinfo)
+      (posinfo x y #\- 'cyan
                'enemy-bullet)]
      [(collide with with-posinfo)
       (match (posinfo-layer with-posinfo)
@@ -144,5 +172,5 @@
          ;; time to die
          ($ ticky 'die)]
         [_ 'no-op])]))
-  (^next bcom x enemy:<:move-speed enemy:<:fire-speed))
+  (^next bcom enemy-bullet:move-speed x))
 
