@@ -89,7 +89,7 @@
                     (stream-rest level-tape))
               (stream-first level-tape))))
 
-(define (^level bcom level-tape dpr-pushdown)
+(define (^level bcom level-tape dpr-pushdown score-tracker)
   (define tape-eater
     (spawn ^tape-eater level-tape))
 
@@ -262,8 +262,12 @@
           0 (- LEVEL-WIDTH 18) ; 18 is width of HI-SCORE + zeroes
           (raart:vappend
            #:halign 'right
-           (raart-labeled-val "SCORE" "00000000")
-           (raart-labeled-val "HI-SCORE" "00000000")))
+           (raart-labeled-val "SCORE"
+                              (~r ($ score-tracker 'get-score)
+                                  #:min-width 8 #:pad-string "0"))
+           (raart-labeled-val "HI-SCORE"
+                              (~r ($ score-tracker 'get-high-score)
+                                  #:min-width 8 #:pad-string "0"))))
          0 0
          (raart:vappend
           #:halign 'left

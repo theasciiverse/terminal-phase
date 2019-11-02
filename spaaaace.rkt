@@ -20,7 +20,8 @@
          "sprites.rkt"
          "posinfo.rkt"
          "raart-render.rkt"
-         "level.rkt")
+         "level.rkt"
+         "score.rkt")
 
 (define-runtime-path pwd
   ".")
@@ -29,6 +30,9 @@
   'TODO)
 
 (define (^main-menu bcom dpr-pushdown)
+  (define total-score
+    (spawn ^total-score-tracker))
+
   (define menu-options
     #("Play game!"
       "Help"))
@@ -36,8 +40,7 @@
   (define (^next bcom [selection 0])
     (methods
      [(tick)
-      'TODO
-      ]
+      'no-op]
      [(handle-event evt)
       (match evt
         ["<up>"
@@ -50,7 +53,8 @@
          (define level-tape
            (open-level-tape (build-path pwd "level1.txt")))
          (define level
-           (spawn ^level level-tape dpr-pushdown))
+           (spawn ^level level-tape dpr-pushdown
+                  ($ total-score 'sprout)))
          ($ dpr-pushdown 'push level)]
         ["q"
          ($ dpr-pushdown 'pop)]
