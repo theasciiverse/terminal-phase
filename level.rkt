@@ -12,7 +12,8 @@
          "level-const.rkt"
          "level-tape.rkt"
          "posinfo.rkt"
-         "raart-render.rkt")
+         "raart-render.rkt"
+         "autoscore-death.rkt")
 
 (define render-layer-order
   '(powerup
@@ -190,7 +191,9 @@
              [#\<
               ($ level-ticker 'to-tick
                  (lambda (ticky)
-                   (spawn ^enemy:< ticky level-right-x y
+                   (define score-ticky
+                     (spawn ^autoscore-death ticky score-tracker 10))
+                   (spawn ^enemy:< score-ticky level-right-x y
                           flavor-char)))]
              [_ 'no-op])
            (cons #f terrain-cells)]
