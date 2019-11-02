@@ -135,7 +135,7 @@
                  (modulo (sub1 move-countdown) enemy:<:move-speed)
                  (modulo (sub1 fire-countdown) enemy:<:fire-speed))]))]
      [(posinfo)
-      (posinfo x y #\< 'brcyan
+      (posinfo x y #\< 'cyan
                'enemy)]
      [(collide with with-posinfo)
       (match (posinfo-layer with-posinfo)
@@ -164,7 +164,7 @@
                (modulo (sub1 move-countdown) enemy-bullet:move-speed)
                next-x)])]
      [(posinfo)
-      (posinfo x y #\- 'cyan
+      (posinfo x y #\- 'brcyan
                'enemy-bullet)]
      [(collide with with-posinfo)
       (match (posinfo-layer with-posinfo)
