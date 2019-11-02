@@ -116,8 +116,7 @@
        ;; run all objects
        ($ dispatch-stack 'tick))
      (actormap-run! (game-actormap gw)
-                    update!
-                    #:reckless? #t)
+                    update!)  ; test optimizing with: #:reckless? #t
      gw)
    (define (word-event gw e)
      (match e
@@ -131,8 +130,7 @@
         (define (dispatcher-handle-event!)
           ($ (game-dispatch-stack gw) 'handle-event e))
         (actormap-run! (game-actormap gw)
-                       dispatcher-handle-event!
-                       #:reckless? #t)
+                       dispatcher-handle-event!)  ; test optimizing with: #:reckless? #t
         ;; quit if there's no dispatcher on the stack
         (if (actormap-peek (game-actormap gw)
                            (game-pushdown gw)
