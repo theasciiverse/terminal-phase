@@ -61,10 +61,8 @@
 
 (define (^player-bullet bcom ticky
                         start-x y)
-  (define x
-    (spawn-cell start-x))
-  (define countdown
-    (spawn-cell BULLET-COUNTDOWN))
+  (define-cell x start-x)
+  (define-cell countdown BULLET-COUNTDOWN)
   (methods
    [(tick)
     ;; advance x if appropriate

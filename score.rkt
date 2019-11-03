@@ -7,8 +7,8 @@
          (prefix-in raart: raart))
 
 (define (^total-score-tracker bcom #:high-score [initial-high-score 0])
-  (define high-score
-    (spawn ^cell initial-high-score))
+  (define-cell high-score
+    initial-high-score)
   ;; for a single game
   (define (^single-score-tracker bcom [score 0])
     (methods
