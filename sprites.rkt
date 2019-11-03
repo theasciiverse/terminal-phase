@@ -13,14 +13,15 @@
 ;;; =================================
 
 (define (^player-ship bcom ticky
-                      #:initial-y [y (floor (/ LEVEL-HEIGHT 2))])
+                      #:initial-y [initial-y (floor (/ LEVEL-HEIGHT 2))])
   (define moved-this-tick?
     (spawn ^cell #f))
-
   (define fire-cooldown
     (spawn ^cell 0))
+  (define y
+    (spawn ^cell initial-y))
 
-  (define (^next bcom y)
+  (define active-methods
     (methods
      [(tick)
       ;; Reset whether we moved this tick or not
@@ -31,23 +32,23 @@
         ($ fire-cooldown (sub1 ($ fire-cooldown))))]
      [(move-up)
       (unless (or ($ moved-this-tick?)
-                  (<= y 0))
+                  (<= ($ y) 0))
         ($ moved-this-tick? #t)
-        (bcom ^next (sub1 y)))]
+        ($ y (sub1 ($ y))))]
      [(move-down)
       (unless (or ($ moved-this-tick?)
-                  (>= y (sub1 LEVEL-HEIGHT)))
+                  (>= ($ y) (sub1 LEVEL-HEIGHT)))
         ($ moved-this-tick? #t)
-        (bcom ^next (add1 y)))]
+        ($ y (add1 ($ y))))]
      [(fire)
       (when (= ($ fire-cooldown) 0)
         ($ ticky 'to-tick
            (lambda (ticky)
              (spawn ^player-bullet ticky
-                    1 y)))
+                    1 ($ y))))
         ($ fire-cooldown 10))]
      [(posinfo)
-      (posinfo 1 y
+      (posinfo 1 ($ y)
                #\> 'bryellow
                'player)]
      [(collide with with-posinfo)
@@ -56,7 +57,7 @@
          ;; time to die
          'TODO]
         [_ 'no-op])]))
-  (^next bcom y))
+  active-methods)
 
 (define BULLET-COUNTDOWN 1)
 
