@@ -72,7 +72,7 @@
    ;; Push a column of terrain (a vector of... booleans?)
    ;; onto the terrain-vec
    [(push-col col-vec)
-    (bcom ^terrain (terrain-push-col terrain-vec col-vec))]
+    (bcom (^terrain bcom (terrain-push-col terrain-vec col-vec)))]
    ;; Write out the full terrain as a list
    [(posinfo)
     posinfos]
@@ -86,8 +86,8 @@
 (define ((^tape-eater bcom level-tape))
   (if (stream-empty? level-tape)
       #f
-      (values (bcom ^tape-eater
-                    (stream-rest level-tape))
+      (values (bcom (^tape-eater bcom
+                                 (stream-rest level-tape)))
               (stream-first level-tape))))
 
 (define (^level bcom level-tape dpr-pushdown score-tracker)
@@ -203,7 +203,7 @@
     ($ terrain 'push-col terrain-col))
 
   (define TERRAIN-SPEED 8)
-  (define (^next bcom [tape-countdown TERRAIN-SPEED])
+  (define (next [tape-countdown TERRAIN-SPEED])
     (methods
      [(tick)
       ;; Tick all the level items
@@ -217,10 +217,10 @@
       (do-collisions)
 
       ;; decrement/reset tape counter
-      (bcom ^next
-            (if (zero? tape-countdown)
-                TERRAIN-SPEED
-                (sub1 tape-countdown)))]
+      (bcom (next
+             (if (zero? tape-countdown)
+                 TERRAIN-SPEED
+                 (sub1 tape-countdown))))]
      [(render)
       (define header
         (raart:fg 'brwhite
@@ -297,7 +297,7 @@
          ($ dpr-pushdown 'pop)]
         [_
          'no-op])]))
-  (^next bcom))
+  (next))
 
 
 (module+ test

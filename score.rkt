@@ -17,7 +17,7 @@
              (+ score n)])
         (when (> new-score ($ high-score))
           ($ high-score new-score))
-        (bcom ^single-score-tracker new-score))]
+        (bcom (^single-score-tracker bcom new-score)))]
      [(get-score)
       score]
      [(get-high-score)

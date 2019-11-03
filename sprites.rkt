@@ -106,8 +106,7 @@
   (* enemy:<:move-speed 20))
 
 (define (^enemy:< bcom ticky x y flavor)
-  (define (^next bcom
-                 x move-countdown fire-countdown)
+  (define (next x move-countdown fire-countdown)
     (methods
      [(tick)
       (let ([x (if (zero? move-countdown)
@@ -128,9 +127,9 @@
                     (lambda (ticky)
                       (spawn ^enemy-bullet ticky (sub1 x) y))))))
 
-           (bcom ^next x
-                 (modulo (sub1 move-countdown) enemy:<:move-speed)
-                 (modulo (sub1 fire-countdown) enemy:<:fire-speed))]))]
+           (bcom (next x
+                       (modulo (sub1 move-countdown) enemy:<:move-speed)
+                       (modulo (sub1 fire-countdown) enemy:<:fire-speed)))]))]
      [(posinfo)
       (posinfo x y #\< 'cyan
                'enemy)]
@@ -140,13 +139,13 @@
          ;; time to die
          ($ ticky 'die)]
         [_ 'no-op])]))
-  (^next bcom x enemy:<:move-speed (quotient enemy:<:fire-speed 2)))
+  (next x enemy:<:move-speed (quotient enemy:<:fire-speed 2)))
 
 (define enemy-bullet:move-speed
   2)
 
 (define (^enemy-bullet bcom ticky x y)
-  (define (^next bcom move-countdown x)
+  (define (next move-countdown x)
     (methods
      [(tick)
       (define next-x
@@ -157,9 +156,9 @@
         [(oob? next-x y)
          ($ ticky 'die)]
         [else
-         (bcom ^next
-               (modulo (sub1 move-countdown) enemy-bullet:move-speed)
-               next-x)])]
+         (bcom (next (modulo (sub1 move-countdown)
+                             enemy-bullet:move-speed)
+                     next-x))])]
      [(posinfo)
       (posinfo x y #\- 'brcyan
                'enemy-bullet)]
@@ -169,5 +168,5 @@
          ;; time to die
          ($ ticky 'die)]
         [_ 'no-op])]))
-  (^next bcom enemy-bullet:move-speed x))
+  (next enemy-bullet:move-speed x))
 

@@ -37,18 +37,18 @@
     #("Play game!"
       "Help"))
 
-  (define (^next bcom [selection 0])
+  (define (next [selection 0])
     (methods
      [(tick)
       'no-op]
      [(handle-event evt)
       (match evt
         ["<up>"
-         (bcom ^next (modulo (add1 selection)
-                             (vector-length menu-options)))]
+         (bcom (next (modulo (add1 selection)
+                             (vector-length menu-options))))]
         ["<down>"
-         (bcom ^next (modulo (abs (sub1 selection))
-                             (vector-length menu-options)))]
+         (bcom (next (modulo (abs (sub1 selection))
+                             (vector-length menu-options))))]
         [(or " " "C-M")
          (define level-tape
            (open-level-tape (build-path pwd "level1.txt")))
@@ -80,7 +80,7 @@
         raart:vappend
         #:halign 'center
         menu-items))]))
-  (^next bcom))
+  (next))
 
 ;;; Game infrastructure
 ;;; ===================
