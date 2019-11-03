@@ -202,7 +202,7 @@
     
     ($ terrain 'push-col terrain-col))
 
-  (define TERRAIN-SPEED 6)
+  (define TERRAIN-SPEED 8)
   (define (^next bcom [tape-countdown TERRAIN-SPEED])
     (methods
      [(tick)
