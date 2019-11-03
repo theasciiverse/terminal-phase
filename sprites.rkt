@@ -14,12 +14,9 @@
 
 (define (^player-ship bcom ticky
                       #:initial-y [initial-y (floor (/ LEVEL-HEIGHT 2))])
-  (define moved-this-tick?
-    (spawn ^cell #f))
-  (define fire-cooldown
-    (spawn ^cell 0))
-  (define y
-    (spawn ^cell initial-y))
+  (define-cell moved-this-tick? #f)
+  (define-cell fire-cooldown 0)
+  (define-cell y initial-y)
 
   (define active-methods
     (methods
@@ -57,6 +54,7 @@
          ;; time to die
          'TODO]
         [_ 'no-op])]))
+
   active-methods)
 
 (define BULLET-COUNTDOWN 1)
