@@ -74,7 +74,8 @@
                         (raart:text option)))))
       (raart:vappend
        #:halign 'center
-       (raart:text "SPAAAACE!  (Main menu!)")
+       (raart:frame
+        (raart:text " TERMINAL PHASE "))
        (raart:blank 0 5)
        (apply
         raart:vappend

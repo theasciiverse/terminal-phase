@@ -211,7 +211,7 @@
      [(render)
       (define header
         (raart:fg 'brwhite
-                  (raart:text ".-*[    SPAAAACE!    ]*-.")))
+                  (raart:text ".-*[ TERMINAL PHASE ]*-.")))
       (define blank-level-canvas
         (raart:blank LEVEL-WIDTH LEVEL-HEIGHT))
       
