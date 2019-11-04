@@ -11,3 +11,7 @@
 (define pkg-authors '(cwebber))
 (define racket-launcher-names '("terminal-phase"))
 (define racket-launcher-libraries '("terminal-phase.rkt"))
+(define raco-commands
+  '(("terminal-phase" (submod terminal-phase/terminal-phase main)
+                      "Play terminal-phase game"
+                      #f)))
