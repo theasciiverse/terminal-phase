@@ -91,6 +91,9 @@
               (stream-first level-tape))))
 
 (define (^level bcom level-tape dpr-pushdown score-tracker)
+  (define-cell lives
+    3)
+
   (define tape-eater
     (spawn ^tape-eater level-tape))
 
@@ -100,7 +103,7 @@
   (define player-ship
     ($ level-ticker 'to-tick
        (lambda (ticky)
-         (spawn ^player-ship ticky))))
+         (spawn ^player-ship ticky lives))))
 
   (define terrain
     ($ level-ticker 'to-tick
@@ -202,7 +205,7 @@
     
     ($ terrain 'push-col terrain-col))
 
-  (define TERRAIN-SPEED 8)
+  (define TERRAIN-SPEED 6)
   (define (next [tape-countdown TERRAIN-SPEED])
     (methods
      [(tick)
@@ -274,7 +277,7 @@
          0 0
          (raart:vappend
           #:halign 'left
-          (raart-labeled-val "LIVES" "3"
+          (raart-labeled-val "LIVES" (number->string ($ lives))
                              #:goal-width 10)
           (raart-labeled-val "LEVEL" "1"
                              #:goal-width 10))))
