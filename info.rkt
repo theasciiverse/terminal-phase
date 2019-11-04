@@ -1,5 +1,5 @@
 #lang info
-(define collection "lux")
+(define collection "terminal-phase")
 (define deps '("lux"
                "goblins"
                "pk"
