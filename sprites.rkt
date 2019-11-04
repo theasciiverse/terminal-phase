@@ -5,14 +5,11 @@
 (require goblins
          goblins/actor-lib/methods
          goblins/actor-lib/add-sub
+         "no-op.rkt"
          "posinfo.rkt"
          "level-const.rkt")
 
 (require pk)
-
-(define no-op
-  (make-keyword-procedure
-   (lambda _ 'no-op)))
 
 ;;; Sprites and other goblin'y things
 ;;; =================================

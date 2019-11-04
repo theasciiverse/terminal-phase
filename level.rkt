@@ -9,6 +9,7 @@
          goblins/actor-lib/methods
          goblins/actor-lib/ticker2
          "sprites.rkt"
+         "no-op.rkt"
          "level-const.rkt"
          "level-tape.rkt"
          "posinfo.rkt"
@@ -67,8 +68,7 @@
             posinfos))))
 
   (methods
-   [(tick)
-    'no-op]
+   [tick no-op]
    ;; Push a column of terrain (a vector of... booleans?)
    ;; onto the terrain-vec
    [(push-col col-vec)
@@ -78,8 +78,7 @@
     posinfos]
    ;; We're not the ones affected by a collision... the object
    ;; colliding is!
-   [(collide . _)
-    'no-op]))
+   [collide no-op]))
 
 ;; An actor that "eats" the tape one column at a time, until
 ;; it reaches the end and returns #f
@@ -206,24 +205,9 @@
     ($ terrain 'push-col terrain-col))
 
   (define TERRAIN-SPEED 6)
-  (define (next [tape-countdown TERRAIN-SPEED])
+
+  (define base-methods
     (methods
-     [(tick)
-      ;; Tick all the level items
-      ($ level-ticker 'tick 'tick)
-
-      ;; maybe advance tape
-      (when (zero? tape-countdown)
-        (advance-level))
-
-      ;; collision detection time
-      (do-collisions)
-
-      ;; decrement/reset tape counter
-      (bcom (next
-             (if (zero? tape-countdown)
-                 TERRAIN-SPEED
-                 (sub1 tape-countdown))))]
      [(render)
       (define header
         (raart:fg 'brwhite
@@ -287,6 +271,32 @@
        header
        (raart:frame level-canvas)
        footer)]
+     ;; you'll need to implement handle-event though
+     [tick no-op]))
+
+  (define (running [tape-countdown TERRAIN-SPEED])
+    (methods
+     #:extends base-methods
+     [(tick)
+      ;; Tick all the level items
+      ($ level-ticker 'tick 'tick)
+
+      ;; maybe advance tape
+      (when (zero? tape-countdown)
+        (advance-level))
+
+      ;; collision detection time
+      (do-collisions)
+
+      (cond
+        [($ player-ship 'dead?)
+         (bcom game-over)]
+        [else
+         ;; decrement/reset tape counter
+         (bcom (running
+                (if (zero? tape-countdown)
+                    TERRAIN-SPEED
+                    (sub1 tape-countdown))))])]
 
      [(handle-event evt)
       (match evt
@@ -300,7 +310,29 @@
          ($ dpr-pushdown 'pop)]
         [_
          'no-op])]))
-  (next))
+
+  (define game-over
+    (methods
+     #:extends base-methods
+     [(render)
+      (define game-render
+        (base-methods 'render))
+      (define game-over-box
+        (raart:frame (raart:text " Game Over! ")))
+      ;; place the game-over-box centered
+      (raart:place-at
+       game-render
+       (- (quotient (raart:raart-h game-render) 2)
+          (quotient (raart:raart-h game-over-box) 2))
+       (- (quotient (raart:raart-w game-render) 2)
+          (quotient (raart:raart-w game-over-box) 2))
+       game-over-box)]
+     [(handle-event evt)
+      (match evt
+        [(or "q" " " "C-M")
+         ($ dpr-pushdown 'pop)])]))
+
+  (running))
 
 
 (module+ test
