@@ -45,6 +45,6 @@ checkout, then run:
 
 : raco pkg install
 
-Then you can ru nit like:
+Then you can run it like:
 
 : racket terminal-phase.rkt
