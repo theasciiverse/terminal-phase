@@ -73,7 +73,7 @@
 
   (define (dying)
     (define-cell death-countdown
-      (* 30 3))
+      (* 30 2))
     (methods
      #:extends base-methods
      [(tick)
@@ -115,7 +115,7 @@
 
   (define (resurrecting)
     (define-cell resurrection-countdown
-      (* 30 6))
+      (* 30 4))
     (methods
      #:extends active
      [(tick)
