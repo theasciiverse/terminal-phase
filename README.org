@@ -29,6 +29,9 @@ GPL v3 or any later version of the GPL published by the FSF.
 
 ** Installing from raco
 
+*TODO:* We need to actually put this in the racket package manager!
+Use the next section instead.
+
 The easiest way to install this program is to first install Racket.
 Then run:
 
