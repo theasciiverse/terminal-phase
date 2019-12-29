@@ -261,6 +261,16 @@
         [_ 'no-op])]))
   (next enemy-bullet:move-speed x))
 
+(define (screenslider-mixin base
+                            x y ticky)
+  (methods
+   #:extends base
+   [(level-advance)
+    (cell-sub1 x)
+    ;; die if we pass off screen
+    (when (oob? ($ x) ($ y))
+      ($ ticky 'die))]))
+
 (define (^enemy-mine bcom ticky initial-x initial-y flavor)
   (define-cell x initial-x)
   (define-cell y initial-y)
@@ -268,10 +278,16 @@
   (define-cell flash-cooldown 0)
 
   (methods
-   #:extends base-sprite
+   #:extends (screenslider-mixin base-sprite
+                                 x y ticky)
+   [(tick)
+    (when (positive? ($ flash-cooldown))
+      (cell-sub1 flash-cooldown))]
    [(posinfo)
     (posinfo ($ x) ($ y)
-             #\* 'brgreen
+             #\^ (if (> ($ flash-cooldown) 0)
+                     'brwhite
+                     'brgreen)
              'enemy)]
    [(collide with with-posinfo)
     (match (posinfo-layer with-posinfo)
@@ -279,12 +295,10 @@
        ;; decrement health
        (cell-sub1 health)
 
+       ;; flash!
+       ($ flash-cooldown 8)
+
        (when (<= ($ health) 0)
          ;; time to die
          ($ ticky 'die))]
-      [_ 'no-op])]
-   [(level-advance)
-    (cell-sub1 x)
-    ;; die if we pass off screen
-    (when (oob? ($ x) ($ y))
-      ($ ticky 'die))]))
+      [_ 'no-op])]))
