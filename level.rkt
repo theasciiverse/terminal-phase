@@ -78,7 +78,10 @@
     posinfos]
    ;; We're not the ones affected by a collision... the object
    ;; colliding is!
-   [collide no-op]))
+   [collide no-op]
+   ;; TODO: I guess maybe the level advancement code goes... here?
+   ;;   Not sure.
+   [level-advance no-op]))
 
 (define (^level bcom level-tape dpr-pushdown score-tracker)
   (define-cell lives
@@ -183,17 +186,30 @@
            (match tile-char
              [#\<
               ($ level-ticker 'to-tick
-                 (lambda (ticky)
+                 (λ (ticky)
                    (define score-ticky
                      (spawn ^autoscore-death ticky score-tracker 10))
                    (spawn ^enemy:< score-ticky level-right-x y
+                          flavor-char)))]
+             [#\*
+              ($ level-ticker 'to-tick
+                 (λ (ticky)
+                   (define score-ticky
+                     (spawn ^autoscore-death ticky score-tracker 20))
+                   (spawn ^enemy-mine score-ticky level-right-x y
                           flavor-char)))]
              [_ 'no-op])
            (cons #f terrain-cells)]
           [#f
            (cons #f terrain-cells)])))
     
-    ($ terrain 'push-col terrain-col))
+    ($ terrain 'push-col terrain-col)
+
+    ;; Inform all ticked items that the level has advanced
+    ($ level-ticker 'foldr
+       (λ (ticked _)
+         ($ ticked 'level-advance))
+       #f))
 
   (define TERRAIN-SPEED 6)
 

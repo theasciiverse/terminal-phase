@@ -14,28 +14,34 @@
 ;;; Sprites and other goblin'y things
 ;;; =================================
 
+(define base-sprite
+  (methods
+   [tick no-op]
+   [collide no-op]
+   [posinfo (const '())]
+   [level-advance no-op]))
+
 (define (^player-ship bcom ticky lives
                       #:initial-y [initial-y (floor (/ LEVEL-HEIGHT 2))])
   (define-cell moved-this-tick? #f)
   (define-cell fire-cooldown 0)
   (define-cell y initial-y)
 
-  (define base-methods
+  (define base-ship
     (methods
+     #:extends base-sprite
      [(dead?)
       ($ ticky 'dead?)]
      ;; Stubs.
      [move-down no-op]
      [move-up no-op]
-     [fire no-op]
-     [collide no-op]
-     [posinfo (const '())]))
+     [fire no-op]))
 
   ;; The four different player states:
   ;; active -> dying -> pause-before-resurrection -> dying
   (define active
     (methods
-     #:extends base-methods
+     #:extends base-ship
      [(tick)
       ;; Reset whether we moved this tick or not
       ($ moved-this-tick? #f)
@@ -75,7 +81,7 @@
     (define-cell death-countdown
       (* 30 2))
     (methods
-     #:extends base-methods
+     #:extends base-ship
      [(tick)
       ;; one step closer to death...
       (cell-sub1 death-countdown)
@@ -107,7 +113,7 @@
     (define-cell resurrect-countdown
       30)
     (methods
-     #:extends base-methods
+     #:extends base-ship
      [(tick)
       (cell-sub1 resurrect-countdown)
       (when (zero? ($ resurrect-countdown))
@@ -146,6 +152,7 @@
   (define-cell x start-x)
   (define-cell countdown BULLET-COUNTDOWN)
   (methods
+   #:extends base-sprite
    [(tick)
     ;; advance x if appropriate
     (cond
@@ -190,6 +197,7 @@
 (define (^enemy:< bcom ticky x y flavor)
   (define (next x move-countdown fire-countdown)
     (methods
+     #:extends base-sprite
      [(tick)
       (let ([x (if (zero? move-countdown)
                    (sub1 x)
@@ -229,6 +237,7 @@
 (define (^enemy-bullet bcom ticky x y)
   (define (next move-countdown x)
     (methods
+     #:extends base-sprite
      [(tick)
       (define next-x
         (if (zero? move-countdown)
@@ -252,3 +261,30 @@
         [_ 'no-op])]))
   (next enemy-bullet:move-speed x))
 
+(define (^enemy-mine bcom ticky initial-x initial-y flavor)
+  (define-cell x initial-x)
+  (define-cell y initial-y)
+  (define-cell health 3)
+  (define-cell flash-cooldown 0)
+
+  (methods
+   #:extends base-sprite
+   [(posinfo)
+    (posinfo ($ x) ($ y)
+             #\* 'brgreen
+             'enemy)]
+   [(collide with with-posinfo)
+    (match (posinfo-layer with-posinfo)
+      [(or 'player 'player-bullet)
+       ;; decrement health
+       (cell-sub1 health)
+
+       (when (<= ($ health) 0)
+         ;; time to die
+         ($ ticky 'die))]
+      [_ 'no-op])]
+   [(level-advance)
+    (cell-sub1 x)
+    ;; die if we pass off screen
+    (when (oob? ($ x) ($ y))
+      ($ ticky 'die))]))
