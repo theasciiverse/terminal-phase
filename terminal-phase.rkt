@@ -3,7 +3,6 @@
 (require (prefix-in raart: raart)
          ansi
          lux
-         racket/runtime-path
 
          ;; debugging
          pk
@@ -11,77 +10,16 @@
          goblins
          goblins/actor-lib/ticker2
          goblins/actor-lib/facet
-         goblins/actor-lib/methods
          goblins/actor-lib/imply-method
          goblins/actor-lib/pushdown
 
-         "level-const.rkt"
-         "level-tape.rkt"
          "sprites.rkt"
          "posinfo.rkt"
          "raart-render.rkt"
-         "level.rkt"
-         "score.rkt")
-
-(define-runtime-path pwd
-  ".")
+         "main-menu.rkt")
 
 (define (^starfield bcom)
   'TODO)
-
-(define (^main-menu bcom dpr-pushdown)
-  (define total-score
-    (spawn ^total-score-tracker))
-
-  (define menu-options
-    #("Play game!"
-      "Help"))
-
-  (define (next [selection 0])
-    (methods
-     [(tick)
-      'no-op]
-     [(handle-event evt)
-      (match evt
-        ["<up>"
-         (bcom (next (modulo (add1 selection)
-                             (vector-length menu-options))))]
-        ["<down>"
-         (bcom (next (modulo (abs (sub1 selection))
-                             (vector-length menu-options))))]
-        [(or " " "C-M")
-         (define level-tape
-           (open-level-tape (build-path pwd "level1.txt")))
-         (define level
-           (spawn ^level level-tape dpr-pushdown
-                  ($ total-score 'sprout)))
-         ($ dpr-pushdown 'push level)]
-        ["q"
-         ($ dpr-pushdown 'pop)]
-        [_
-         'no-op])]
-     [(render)
-      (define menu-items
-        (for/list ([option menu-options]
-                   [i (in-naturals)])
-          (if (= i selection)
-              (raart:fg 'bryellow
-                        (raart:text
-                         (string-append ">> "
-                                        option
-                                        " <<")))
-              (raart:fg 'white
-                        (raart:text option)))))
-      (raart:vappend
-       #:halign 'center
-       (raart:frame
-        (raart:text " TERMINAL PHASE "))
-       (raart:blank 0 5)
-       (apply
-        raart:vappend
-        #:halign 'center
-        menu-items))]))
-  (next))
 
 ;;; Game infrastructure
 ;;; ===================
