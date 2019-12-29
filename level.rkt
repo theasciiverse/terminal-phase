@@ -80,15 +80,6 @@
    ;; colliding is!
    [collide no-op]))
 
-;; An actor that "eats" the tape one column at a time, until
-;; it reaches the end and returns #f
-(define ((^tape-eater bcom level-tape))
-  (if (stream-empty? level-tape)
-      #f
-      (values (bcom (^tape-eater bcom
-                                 (stream-rest level-tape)))
-              (stream-first level-tape))))
-
 (define (^level bcom level-tape dpr-pushdown score-tracker)
   (define-cell lives
     3)
@@ -334,46 +325,3 @@
 
   (running))
 
-
-(module+ test
-  (require rackunit)
-  (define am (make-actormap))
-  (define test-level-tape
-    (read-level-tape "\
-1
-23
-  4
---
-a e
-bc
-  f
- d
-  g"))
-
-  (define tape-eater
-    (actormap-spawn! am ^tape-eater test-level-tape))
-
-  (check-equal?
-   (actormap-poke! am tape-eater)
-   '((#\a . #\1)
-     (#\b . #\2)
-     #f
-     #f
-     #f))
-  (check-equal?
-   (actormap-poke! am tape-eater)
-   '(#f
-     (#\c . #f)
-     #f
-     (#\d . #\3)
-     #f))
-  (check-equal?
-   (actormap-poke! am tape-eater)
-   '((#\e . #f)
-     #f
-     (#\f . #f)
-     #f
-     (#\g . #\4)))
-  (check-equal?
-   (actormap-poke! am tape-eater)
-   #f))

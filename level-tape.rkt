@@ -1,6 +1,6 @@
 #lang racket
 
-(provide read-level-tape open-level-tape)
+(provide read-level-tape open-level-tape ^tape-eater)
 
 ;; Separate level text into flavor lines, tile lines, and count
 ;; of longest tile line
@@ -81,3 +81,56 @@
    (call-with-input-file level-filename
      port->string)))
 
+
+;; An actor that "eats" the tape one column at a time, until
+;; it reaches the end and returns #f
+(define ((^tape-eater bcom level-tape))
+  (if (stream-empty? level-tape)
+      #f
+      (values (bcom (^tape-eater bcom
+                                 (stream-rest level-tape)))
+              (stream-first level-tape))))
+
+(module+ test
+  (require goblins
+           rackunit)
+  (define am (make-actormap))
+  (define test-level-tape
+    (read-level-tape "\
+1
+23
+  4
+--
+a e
+bc
+  f
+ d
+  g"))
+
+  (define tape-eater
+    (actormap-spawn! am ^tape-eater test-level-tape))
+
+  (check-equal?
+   (actormap-poke! am tape-eater)
+   '((#\a . #\1)
+     (#\b . #\2)
+     #f
+     #f
+     #f))
+  (check-equal?
+   (actormap-poke! am tape-eater)
+   '(#f
+     (#\c . #f)
+     #f
+     (#\d . #\3)
+     #f))
+  (check-equal?
+   (actormap-poke! am tape-eater)
+   '((#\e . #f)
+     #f
+     (#\f . #f)
+     #f
+     (#\g . #\4)))
+  (check-equal?
+   (actormap-poke! am tape-eater)
+   #f))
