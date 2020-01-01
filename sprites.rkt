@@ -7,7 +7,8 @@
          goblins/actor-lib/add-sub
          "no-op.rkt"
          "posinfo.rkt"
-         "level-const.rkt")
+         "level-const.rkt"
+         "loopdown.rkt")
 
 (require pk)
 
@@ -235,21 +236,22 @@
   2)
 
 (define (^enemy-bullet bcom ticky x y)
-  (define (next move-countdown x)
+  (define-spawned move-countdown
+    ^loopdown enemy-bullet:move-speed)
+  (define (next x)
     (methods
      #:extends base-sprite
      [(tick)
+      ($ move-countdown 'sub1)
       (define next-x
-        (if (zero? move-countdown)
+        (if ($ move-countdown 'zero?)
             (sub1 x)
             x))
       (cond
         [(oob? next-x y)
          ($ ticky 'die)]
         [else
-         (bcom (next (modulo (sub1 move-countdown)
-                             enemy-bullet:move-speed)
-                     next-x))])]
+         (bcom (next next-x))])]
      [(posinfo)
       (posinfo x y #\- 'brcyan
                'enemy-bullet)]
@@ -259,7 +261,7 @@
          ;; time to die
          ($ ticky 'die)]
         [_ 'no-op])]))
-  (next enemy-bullet:move-speed x))
+  (next x))
 
 (define (screenslider-mixin base
                             x y ticky)
