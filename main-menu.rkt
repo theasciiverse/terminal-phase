@@ -10,7 +10,7 @@
          "score.rkt"
          "pwd.rkt")
 
-(define (^main-menu bcom dpr-pushdown)
+(define (^main-menu bcom dpr-pushdown [level-files #f])
   (define total-score
     (spawn ^total-score-tracker))
 
@@ -31,8 +31,12 @@
          (bcom (next (modulo (abs (sub1 selection))
                              (vector-length menu-options))))]
         [(or " " "C-M")
+         (define level-file
+           (match level-files
+             [(cons level-filename rest) level-filename]
+             [_ (build-path pwd "level1.txt")]))
          (define level-tape
-           (open-level-tape (build-path pwd "level1.txt")))
+           (open-level-tape level-file))
          (define level
            (spawn ^level level-tape dpr-pushdown
                   ($ total-score 'sprout)))

@@ -108,7 +108,7 @@
      ($ ticker-register ref)
      ref)))
 
-(define (new-game rows cols)
+(define (new-game rows cols level-files)
   (define actormap (make-actormap))
   (define (make-new-game)
     (match-define (list dispatcher-pushdown dispatcher-forwarder)
@@ -141,7 +141,7 @@
             (clear-screen/home))
   proc-result)
 
-(define (start-game)
+(define (start-game level-files)
   #;(with-handlers ([exn:fail?
                    (lambda (err)
                      #;(display* (dec-soft-terminal-reset)
@@ -160,23 +160,28 @@
       (call-with-chaos
        (raart:make-raart)
        (lambda ()
-         (fiat-lux (new-game rows cols))))))
+         (fiat-lux (new-game rows cols level-files))))))
   (void))
 
 (define show-fps?
   (make-parameter #f))
 
 (module+ main
-  (command-line
-   #:once-each
-   [("-d" "--debug-file")
-    debug-file-arg
-    "Print current-error-port to this debug file"
-    (let ([debug-file (open-output-file debug-file-arg
-                                        #:exists 'append)])
-      (current-error-port debug-file))]
-   [("-f" "--show-fps")
-    "Show current FPS"
-    (show-fps? #t)])
+  (define level-files
+    (command-line
+     #:once-each
+     [("-d" "--debug-file")
+      debug-file-arg
+      "Print current-error-port to this debug file"
+      (let ([debug-file (open-output-file debug-file-arg
+                                          #:exists 'append)])
+        (current-error-port debug-file))]
+     [("-f" "--show-fps")
+      "Show current FPS"
+      (show-fps? #t)]
+     #:args level-files
+     level-files))
 
-  (start-game))
+  (start-game (match level-files
+                ['() #f]
+                [_ level-files])))
