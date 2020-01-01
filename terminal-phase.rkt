@@ -114,7 +114,7 @@
     (match-define (list dispatcher-pushdown dispatcher-forwarder)
       (spawn-pushdown-pair))
     (define main-menu
-      (spawn ^main-menu dispatcher-pushdown))
+      (spawn ^main-menu dispatcher-pushdown level-files))
     ($ dispatcher-pushdown 'push main-menu)
 
     (game actormap
