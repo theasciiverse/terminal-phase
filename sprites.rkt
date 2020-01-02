@@ -195,42 +195,48 @@
 (define enemy:<:fire-speed
   (* enemy:<:move-speed 20))
 
-(define (^enemy:< bcom ticky x y flavor)
-  (define (next x move-countdown fire-countdown)
-    (methods
-     #:extends base-sprite
-     [(tick)
-      (let ([x (if (zero? move-countdown)
-                   (sub1 x)
-                   x)])
-        (cond
-          ;; Left the screen?  time to die
-          [(oob? x y)
-           ($ ticky 'die)]
-          ;; Still on screen?  Guess we're still alive
-          [else
-           ;; Fire a bullet if it's bullet firing time
-           (when (zero? fire-countdown)
-             (let ([bullet-x (sub1 x)]
-                   [bullet-y y])
-               (unless (oob? bullet-x bullet-y)
-                 ($ ticky 'to-tick
-                    (lambda (ticky)
-                      (spawn ^enemy-bullet ticky (sub1 x) y))))))
+(define (^enemy:< bcom ticky initial-x initial-y flavor)
+  (define-cell x initial-x)
+  (define-cell y initial-y)
+  (define move-countdown
+    (spawn ^loopdown enemy:<:move-speed))
+  (define fire-countdown
+    (spawn ^loopdown enemy:<:fire-speed (quotient enemy:<:fire-speed 2)))
 
-           (bcom (next x
-                       (modulo (sub1 move-countdown) enemy:<:move-speed)
-                       (modulo (sub1 fire-countdown) enemy:<:fire-speed)))]))]
-     [(posinfo)
-      (posinfo x y #\< 'cyan
-               'enemy)]
-     [(collide with with-posinfo)
-      (match (posinfo-layer with-posinfo)
-        [(or 'player-bullet)
-         ;; time to die
-         ($ ticky 'die)]
-        [_ 'no-op])]))
-  (next x enemy:<:move-speed (quotient enemy:<:fire-speed 2)))
+  (methods
+   #:extends base-sprite
+   [(tick)
+    (when ($ move-countdown 'zero?)
+      (cell-sub1 x))
+
+    (cond
+      ;; Left the screen?  time to die
+      [(oob? ($ x) ($ y))
+       ($ ticky 'die)]
+
+      ;; Still on screen?  Guess we're still alive
+      [else
+       ;; Fire a bullet if it's bullet firing time
+       (when ($ fire-countdown 'zero?)
+         (let ([bullet-x (sub1 ($ x))]
+               [bullet-y ($ y)])
+           (unless (oob? bullet-x bullet-y)
+             ($ ticky 'to-tick
+                (lambda (ticky)
+                  (spawn ^enemy-bullet ticky bullet-x bullet-y))))))
+
+       ($ move-countdown 'sub1)
+       ($ fire-countdown 'sub1)
+       (void)])]
+   [(posinfo)
+    (posinfo ($ x) ($ y) #\< 'cyan
+             'enemy)]
+   [(collide with with-posinfo)
+    (match (posinfo-layer with-posinfo)
+      [(or 'player-bullet)
+       ;; time to die
+       ($ ticky 'die)]
+      [_ 'no-op])]))
 
 (define enemy-bullet:move-speed
   2)
@@ -276,7 +282,7 @@
 (define (^enemy-mine bcom ticky initial-x initial-y flavor)
   (define-cell x initial-x)
   (define-cell y initial-y)
-  (define-cell health 3)
+  (define-cell health 2)
   (define-cell flash-cooldown 0)
 
   (methods
