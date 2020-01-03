@@ -191,6 +191,13 @@
                      (spawn ^autoscore-death ticky score-tracker 10))
                    (spawn ^enemy:< score-ticky level-right-x y
                           flavor-char)))]
+             [#\S
+              ($ level-ticker 'to-tick
+                 (λ (ticky)
+                   (define score-ticky
+                     (spawn ^autoscore-death ticky score-tracker 10))
+                   (spawn ^enemy:squiggler score-ticky level-right-x y
+                          flavor-char)))]
              [#\^
               ($ level-ticker 'to-tick
                  (λ (ticky)

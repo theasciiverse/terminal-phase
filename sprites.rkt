@@ -187,56 +187,101 @@
       [_ 'no-op])]))
 
 
+;;; =======
 ;;; Enemies
 ;;; =======
+
+;;; Ships
+;;; -----
 
 (define enemy:<:move-speed
   5)
 (define enemy:<:fire-speed
   (* enemy:<:move-speed 20))
 
-(define (^enemy:< bcom ticky initial-x initial-y flavor)
-  (define-cell x initial-x)
-  (define-cell y initial-y)
-  (define move-countdown
-    (spawn ^loopdown enemy:<:move-speed))
-  (define fire-countdown
-    (spawn ^loopdown enemy:<:fire-speed (quotient enemy:<:fire-speed 2)))
+(define (move-forward ticky x y)
+  (cell-sub1 x))
 
-  (methods
-   #:extends base-sprite
-   [(tick)
-    (when ($ move-countdown 'zero?)
-      (cell-sub1 x))
+(define (fire-forward ticky bullet-x bullet-y)
+  ($ ticky 'to-tick
+     (lambda (ticky)
+       (spawn ^enemy-bullet ticky bullet-x bullet-y))))
 
-    (cond
-      ;; Left the screen?  time to die
-      [(oob? ($ x) ($ y))
-       ($ ticky 'die)]
+(define (never-fire . args)
+  'no-op)
 
-      ;; Still on screen?  Guess we're still alive
-      [else
-       ;; Fire a bullet if it's bullet firing time
-       (when ($ fire-countdown 'zero?)
-         (let ([bullet-x (sub1 ($ x))]
-               [bullet-y ($ y)])
-           (unless (oob? bullet-x bullet-y)
-             ($ ticky 'to-tick
-                (lambda (ticky)
-                  (spawn ^enemy-bullet ticky bullet-x bullet-y))))))
+(define (mover-ship-constructor char color
+                                #:move [move-proc move-forward]
+                                #:fire [fire-proc fire-forward])
+  (lambda (bcom ticky initial-x initial-y flavor)
+    (define-cell x initial-x)
+    (define-cell y initial-y)
+    (define move-countdown
+      (spawn ^loopdown enemy:<:move-speed))
+    (define fire-countdown
+      (spawn ^loopdown enemy:<:fire-speed (quotient enemy:<:fire-speed 2)))
 
-       ($ move-countdown 'sub1)
-       ($ fire-countdown 'sub1)
-       (void)])]
-   [(posinfo)
-    (posinfo ($ x) ($ y) #\< 'cyan
-             'enemy)]
-   [(collide with with-posinfo)
-    (match (posinfo-layer with-posinfo)
-      [(or 'player-bullet)
-       ;; time to die
-       ($ ticky 'die)]
-      [_ 'no-op])]))
+    (methods
+     #:extends base-sprite
+     [(tick)
+      (when ($ move-countdown 'zero?)
+        (move-proc ticky x y))
+        
+      (cond
+        ;; Left the screen?  time to die
+        [(oob? ($ x) ($ y))
+         ($ ticky 'die)]
+
+        ;; Still on screen?  Guess we're still alive
+        [else
+         ;; Fire a bullet if it's bullet firing time
+         (when ($ fire-countdown 'zero?)
+           (let ([bullet-x (sub1 ($ x))]
+                 [bullet-y ($ y)])
+             (unless (oob? bullet-x bullet-y)
+               (fire-proc ticky bullet-x bullet-y))))
+
+         ($ move-countdown 'sub1)
+         ($ fire-countdown 'sub1)
+         (void)])]
+     [(posinfo)
+      (posinfo ($ x) ($ y) char color
+               'enemy)]
+     [(collide with with-posinfo)
+      (match (posinfo-layer with-posinfo)
+        [(or 'player-bullet)
+         ;; time to die
+         ($ ticky 'die)]
+        [_ 'no-op])])))
+
+(define ^enemy:<
+  (mover-ship-constructor #\< 'cyan))
+
+(define squiggler-pattern
+  #(-1 -1 0 0 0 +1 +1 +1 0 0 0 -1))
+
+(define (^enemy:squiggler bcom ticky initial-x initial-y flavor)
+  (define squiggle-pos
+    (spawn ^loopdown (sub1 (vector-length squiggler-pattern))))
+  (define (move-squiggle ticky x y)
+    ;; first move to the left
+    (cell-sub1 x)
+    ;; then squiggle
+    (define squiggle-offset
+      (vector-ref squiggler-pattern
+                  ($ squiggle-pos 'counter)))
+    ($ y (+ ($ y) squiggle-offset))  ; set y to y plus squiggle-offset
+    ;; push down squiggle counter
+    ($ squiggle-pos 'sub1))
+  
+  (define ship-constructor
+    (mover-ship-constructor #\S 'blue
+                            #:move move-squiggle
+                            #:fire never-fire))
+  (ship-constructor bcom ticky initial-x initial-y flavor))
+
+;;; Bullets
+;;; -------
 
 (define enemy-bullet:move-speed
   2)
