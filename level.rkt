@@ -189,22 +189,19 @@
                  (λ (ticky)
                    (define score-ticky
                      (spawn ^autoscore-death ticky score-tracker 10))
-                   (spawn ^enemy:< score-ticky level-right-x y
-                          flavor-char)))]
+                   (spawn ^enemy:< score-ticky level-right-x y)))]
              [#\S
               ($ level-ticker 'to-tick
                  (λ (ticky)
                    (define score-ticky
                      (spawn ^autoscore-death ticky score-tracker 10))
-                   (spawn ^enemy:squiggler score-ticky level-right-x y
-                          flavor-char)))]
+                   (spawn ^enemy:squiggler score-ticky level-right-x y)))]
              [#\^
               ($ level-ticker 'to-tick
                  (λ (ticky)
                    (define score-ticky
                      (spawn ^autoscore-death ticky score-tracker 20))
-                   (spawn ^enemy-mine score-ticky level-right-x y
-                          flavor-char)))]
+                   (spawn ^enemy-mine score-ticky level-right-x y)))]
              [_ 'no-op])
            (cons #f terrain-cells)]
           [#f

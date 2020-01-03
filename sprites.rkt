@@ -213,7 +213,7 @@
 (define (mover-ship-constructor char color
                                 #:move [move-proc move-forward]
                                 #:fire [fire-proc fire-forward])
-  (lambda (bcom ticky initial-x initial-y flavor)
+  (lambda (bcom ticky initial-x initial-y)
     (define-cell x initial-x)
     (define-cell y initial-y)
     (define move-countdown
@@ -260,7 +260,7 @@
 (define squiggler-pattern
   #(-1 -1 0 0 0 +1 +1 +1 0 0 0 -1))
 
-(define (^enemy:squiggler bcom ticky initial-x initial-y flavor)
+(define (^enemy:squiggler bcom ticky initial-x initial-y)
   (define squiggle-pos
     (spawn ^loopdown (sub1 (vector-length squiggler-pattern))))
   (define (move-squiggle ticky x y)
@@ -278,7 +278,7 @@
     (mover-ship-constructor #\S 'blue
                             #:move move-squiggle
                             #:fire never-fire))
-  (ship-constructor bcom ticky initial-x initial-y flavor))
+  (ship-constructor bcom ticky initial-x initial-y))
 
 ;;; Bullets
 ;;; -------
@@ -324,7 +324,7 @@
     (when (oob? ($ x) ($ y))
       ($ ticky 'die))]))
 
-(define (^enemy-mine bcom ticky initial-x initial-y flavor)
+(define (^enemy-mine bcom ticky initial-x initial-y)
   (define-cell x initial-x)
   (define-cell y initial-y)
   (define-cell health 2)
