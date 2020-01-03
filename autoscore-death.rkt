@@ -9,6 +9,7 @@
 (define (^autoscore-death bcom ticky score-tracker score)
   (methods
    #:extends ticky
-   [(die)
-    ($ score-tracker 'add score)
+   [(die #:points? [points? #f])
+    (when points?
+      ($ score-tracker 'add score))
     ($ ticky 'die)]))

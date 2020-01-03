@@ -251,7 +251,7 @@
       (match (posinfo-layer with-posinfo)
         [(or 'player-bullet)
          ;; time to die
-         ($ ticky 'die)]
+         ($ ticky 'die #:points? #t)]
         [_ 'no-op])])))
 
 (define ^enemy:<
