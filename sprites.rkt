@@ -353,5 +353,5 @@
 
        (when (<= ($ health) 0)
          ;; time to die
-         ($ ticky 'die))]
+         ($ ticky 'die #:points? #t))]
       [_ 'no-op])]))
