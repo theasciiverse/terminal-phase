@@ -71,7 +71,7 @@
       (posinfo 1 ($ y)
                #\> 'bryellow
                'player)]
-     [(collide with with-posinfo)
+     [(collide with with-posinfo phase)
       (match (posinfo-layer with-posinfo)
         [(or 'enemy 'enemy-bullet 'terrain)
          ;; time to die
@@ -179,7 +179,7 @@
     (if (< (add1 cur-x) LEVEL-WIDTH)
         (list tail head)
         tail)]
-   [(collide with with-posinfo)
+   [(collide with with-posinfo phase)
     (match (posinfo-layer with-posinfo)
       [(or 'enemy 'enemy-bullet 'terrain)
        ;; time to die
@@ -247,7 +247,7 @@
      [(posinfo)
       (posinfo ($ x) ($ y) char color
                'enemy)]
-     [(collide with with-posinfo)
+     [(collide with with-posinfo phase)
       (match (posinfo-layer with-posinfo)
         [(or 'player-bullet)
          ;; time to die
@@ -306,7 +306,7 @@
      [(posinfo)
       (posinfo x y #\- 'brcyan
                'enemy-bullet)]
-     [(collide with with-posinfo)
+     [(collide with with-posinfo phase)
       (match (posinfo-layer with-posinfo)
         [(or 'player 'player-bullet 'terrain)
          ;; time to die
@@ -342,7 +342,7 @@
                      'brwhite
                      'brgreen)
              'enemy)]
-   [(collide with with-posinfo)
+   [(collide with with-posinfo phase)
     (match (posinfo-layer with-posinfo)
       [(or 'player 'player-bullet)
        ;; decrement health

@@ -13,8 +13,7 @@
          "level-const.rkt"
          "level-tape.rkt"
          "posinfo.rkt"
-         "raart-render.rkt"
-         "autoscore-death.rkt")
+         "raart-render.rkt")
 
 (define render-layer-order
   '(powerup
@@ -103,7 +102,49 @@
        (lambda (ticky)
          (spawn ^terrain))))
 
-  ;; Calculate collisions and inform participants
+  ;; TODO: Store last layout when generating the level
+  (define-cell last-layout)
+
+  (define (posinfo->vector-pos this-posinfo)
+    (+ (* LEVEL-HEIGHT (posinfo-x this-posinfo))
+       (posinfo-y this-posinfo)))
+
+  ;; We add some extra methods to this ticky that let this object
+  ;; do some things:
+  ;;  - Add points to the score on death
+  (define (^custom-ticky bcom orig-ticky this-obj-box
+                         #:points [points #f])
+    (define (default-other-on-collide with this-posinfo)
+      ($ with 'collide (unbox this-obj-box) this-posinfo 'collide-test-other))
+    (methods
+     #:extends orig-ticky
+     ;; Give points for death via the ticky
+     [(die #:points? [points? #f])
+      (when (and points points?)
+        ($ score-tracker 'add points))
+      ($ orig-ticky 'die)]
+     ;; Check if we're out of bounds
+     ;; (This will change with possibly changing level sizes in the future)
+     [(oob? x y)
+      (oob? x y)]
+     ;; Collides with the last layout?
+     [(last-collide check-posinfo phase collide-this 
+                    #:collide-other
+                    [collide-other default-other-on-collide])
+      (define this-obj
+        (unbox this-obj-box))
+      (define vector-pos
+        (posinfo->vector-pos check-posinfo))
+      ;; Who else is here?
+      (for ([co-inhabitant (vector-ref ($ last-layout) vector-pos)])
+        (match-define (vector other-ticked other-posinfo)
+          co-inhabitant)
+        (unless (eq? other-ticked this-obj)
+          (collide-this other-ticked other-posinfo)
+          (collide-other other-ticked check-posinfo)))]))
+
+  ;; Calculate collisions and inform participants.
+  ;; The big, general collision detection.
   (define (do-collisions)
     (define level-vector
       (make-vector (* LEVEL-WIDTH LEVEL-HEIGHT) '()))
@@ -117,12 +158,12 @@
              [posinfo (list posinfo)]))
          (for [(this-posinfo posinfos)]
            (define vector-pos
-             (+ (* LEVEL-HEIGHT (posinfo-x this-posinfo))
-                (posinfo-y this-posinfo)))
+             (posinfo->vector-pos this-posinfo))
            (vector-set! level-vector vector-pos
                         (cons (vector ticked this-posinfo)
                               (vector-ref level-vector vector-pos)))))
        #f)
+    ($ last-layout level-vector)
     ;; Go through and inform of collisions
     (for ([co-habitants level-vector]
           [vec-i (in-naturals)])
@@ -155,7 +196,7 @@
                        new-collided)))
                (unless (set-member? already-collided other-ticked)
                  ($ this-ticked 'collide
-                    other-ticked other-posinfo)
+                    other-ticked other-posinfo 'super-collide)
                  (set-add! already-collided other-ticked)))))])))
 
   (define (advance-level)
@@ -183,25 +224,25 @@
           [(cons #\# _)
            (cons #t terrain-cells)]
           [(cons tile-char flavor-char)
+           (define (spawn-ticked-enemy constructor points)
+             ($ level-ticker 'to-tick
+                (λ (ticky)
+                  (define obj-box
+                    (box #f))
+                  (define score-ticky
+                    (spawn ^custom-ticky ticky obj-box
+                           #:points points))
+                  (define enemy
+                    (spawn constructor score-ticky level-right-x y))
+                  (set-box! obj-box enemy)
+                  enemy)))
            (match tile-char
              [#\<
-              ($ level-ticker 'to-tick
-                 (λ (ticky)
-                   (define score-ticky
-                     (spawn ^autoscore-death ticky score-tracker 10))
-                   (spawn ^enemy:< score-ticky level-right-x y)))]
+              (spawn-ticked-enemy ^enemy:< 10)]
              [#\S
-              ($ level-ticker 'to-tick
-                 (λ (ticky)
-                   (define score-ticky
-                     (spawn ^autoscore-death ticky score-tracker 10))
-                   (spawn ^enemy:squiggler score-ticky level-right-x y)))]
+              (spawn-ticked-enemy ^enemy:squiggler 10)]
              [#\^
-              ($ level-ticker 'to-tick
-                 (λ (ticky)
-                   (define score-ticky
-                     (spawn ^autoscore-death ticky score-tracker 20))
-                   (spawn ^enemy-mine score-ticky level-right-x y)))]
+              (spawn-ticked-enemy ^enemy-mine 10)]
              [_ 'no-op])
            (cons #f terrain-cells)]
           [#f
