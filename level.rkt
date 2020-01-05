@@ -383,6 +383,10 @@
          ($ player-ship 'move-up)]
         ["<down>"
          ($ player-ship 'move-down)]
+        ["<left>"
+         ($ player-ship 'move-left)]
+        ["<right>"
+         ($ player-ship 'move-right)]
         [" "
          ($ player-ship 'fire)]
         ["q"

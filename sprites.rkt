@@ -23,10 +23,12 @@
    [level-advance no-op]))
 
 (define (^player-ship bcom ticky lives
-                      #:initial-y [initial-y (floor (/ LEVEL-HEIGHT 2))])
+                      #:initial-y [initial-y (floor (/ LEVEL-HEIGHT 2))]
+                      #:initial-x [initial-x 1])
   (define-cell moved-this-tick? #f)
   (define-cell fire-cooldown 0)
   (define-cell y initial-y)
+  (define-cell x initial-x)
 
   (define base-ship
     (methods
@@ -36,7 +38,21 @@
      ;; Stubs.
      [move-down no-op]
      [move-up no-op]
+     [move-left no-op]
+     [move-right no-op]
      [fire no-op]))
+
+  (define (move-deathcheck)
+    ($ ticky 'last-collide
+       (alive-posinfo) 'player-move
+       (λ _ ($ ticky 'die)))
+    ;; simplifies the "and" which calls this
+    #t)
+
+  (define (alive-posinfo)
+    (posinfo ($ x) ($ y)
+             #\> 'bryellow
+             'player))
 
   ;; The four different player states:
   ;; active -> dying -> pause-before-resurrection -> dying
@@ -50,33 +66,61 @@
       ;; Decrease the fire cooldown, if appropriate
       (unless (= ($ fire-cooldown) 0)
         ($ fire-cooldown (sub1 ($ fire-cooldown))))]
+     ;; returns a boolean (whether we moved or not)
      [(move-up)
       (unless (or ($ moved-this-tick?)
                   (<= ($ y) 0))
         ($ moved-this-tick? #t)
-        (cell-sub1 y))]
+        (cell-sub1 y)
+        #t)
+      #f]
      [(move-down)
       (unless (or ($ moved-this-tick?)
                   (>= ($ y) (sub1 LEVEL-HEIGHT)))
         ($ moved-this-tick? #t)
-        (cell-add1 y))]
+        (cell-add1 y)
+        #t)
+      #f]
+     [(move-left)
+      (unless (or ($ moved-this-tick?)
+                  (<= ($ x) 0))
+        ($ moved-this-tick? #t)
+        (cell-sub1 x)
+        #t)
+      #f]
+     [(move-right)
+      (unless (or ($ moved-this-tick?)
+                  (>= ($ x) (sub1 LEVEL-WIDTH)))
+        ($ moved-this-tick? #t)
+        (cell-add1 x)
+        #t)
+      #f]
      [(fire)
       (when (= ($ fire-cooldown) 0)
         ($ ticky 'to-tick
            (lambda (ticky)
              (spawn ^player-bullet ticky
-                    1 ($ y))))
+                    ($ x) ($ y))))
         ($ fire-cooldown 10))]
      [(posinfo)
-      (posinfo 1 ($ y)
-               #\> 'bryellow
-               'player)]
+      (alive-posinfo)]
      [(collide with with-posinfo phase)
       (match (posinfo-layer with-posinfo)
         [(or 'enemy 'enemy-bullet 'terrain)
          ;; time to die
          (bcom (dying))]
         [_ 'no-op])]))
+
+  (define alive
+    (methods
+     #:extends active
+     ;; Extend all movement actions to do a move-deathcheck
+     [(move-up)
+      (and (active 'move-up)
+           (move-deathcheck))]
+     [(move-down)
+      (and (active 'move-down)
+           (move-deathcheck))]))
 
   (define (dying)
     (define-cell death-countdown
@@ -94,17 +138,17 @@
             (bcom (pause-before-resurrection))))]
      [(posinfo)
       (match (modulo (quotient ($ death-countdown) 6) 6)
-        [0 (posinfo 1 ($ y)
+        [0 (posinfo ($ x) ($ y)
                     #\% 'brred
                     'player)]
-        [1 (posinfo 1 ($ y)
+        [1 (posinfo ($ x) ($ y)
                     #\# 'bryellow
                     'player)]
         [2 '()]
-        [3 (posinfo 1 ($ y)
+        [3 (posinfo ($ x) ($ y)
                     #\+ 'red
                     'player)]
-        [4 (posinfo 1 ($ y)
+        [4 (posinfo ($ x) ($ y)
                     #\# 'yellow
                     'player)]
         [5 '()])
@@ -131,7 +175,7 @@
       ;; now reduce time to resurrection
       (cell-sub1 resurrection-countdown)
       (when (zero? ($ resurrection-countdown))
-        (bcom active))]
+        (bcom alive))]
      ;; disable handling collisions while resurrecting
      [collide no-op]
      ;; TODO: disable firing while resurrecting?
@@ -139,12 +183,12 @@
      ;; flicker in and out of reality
      [(posinfo)
       (if (even? (quotient ($ resurrection-countdown) 6))
-          (posinfo 1 ($ y)
+          (posinfo ($ x) ($ y)
                    #\> 'bryellow
                    'player)
           '())]))
 
-  active)
+  alive)
 
 (define BULLET-COUNTDOWN 1)
 
