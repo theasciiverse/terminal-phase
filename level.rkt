@@ -91,31 +91,13 @@
 
   (define level-ticker (spawn-ticker))
 
-  ;; Define the player and spawn a ticked facet of it
-  (define player-ship
-    ($ level-ticker 'to-tick
-       (lambda (ticky)
-         (spawn ^player-ship ticky lives))))
-
-  (define terrain
-    ($ level-ticker 'to-tick
-       (lambda (ticky)
-         (spawn ^terrain))))
-
-  ;; TODO: Store last layout when generating the level
-  (define-cell last-layout)
-
-  (define (posinfo->vector-pos this-posinfo)
-    (+ (* LEVEL-HEIGHT (posinfo-x this-posinfo))
-       (posinfo-y this-posinfo)))
-
   ;; We add some extra methods to this ticky that let this object
   ;; do some things:
   ;;  - Add points to the score on death
   (define (^custom-ticky bcom orig-ticky this-obj-box
                          #:points [points #f])
-    (define (default-other-on-collide with this-posinfo)
-      ($ with 'collide (unbox this-obj-box) this-posinfo 'collide-test-other))
+    (define (default-other-on-collide with this-posinfo phase)
+      ($ with 'collide (unbox this-obj-box) this-posinfo phase))
     (methods
      #:extends orig-ticky
      ;; Give points for death via the ticky
@@ -128,20 +110,65 @@
      [(oob? x y)
       (oob? x y)]
      ;; Collides with the last layout?
-     [(last-collide check-posinfo phase collide-this 
+     [(last-collide check-posinfos phase collide-this 
                     #:collide-other
                     [collide-other default-other-on-collide])
       (define this-obj
         (unbox this-obj-box))
-      (define vector-pos
-        (posinfo->vector-pos check-posinfo))
       ;; Who else is here?
-      (for ([co-inhabitant (vector-ref ($ last-layout) vector-pos)])
-        (match-define (vector other-ticked other-posinfo)
-          co-inhabitant)
-        (unless (eq? other-ticked this-obj)
-          (collide-this other-ticked other-posinfo)
-          (collide-other other-ticked check-posinfo)))]))
+      (for ([check-posinfo (match check-posinfos
+                             [(list items ...)
+                              items]
+                             [posinfo (list posinfo)])])
+        (unless (oob? (posinfo-x check-posinfo)
+                      (posinfo-y check-posinfo))
+          (define vector-pos
+            (posinfo->vector-pos check-posinfo))
+          (for ([co-inhabitant (vector-ref ($ last-layout) vector-pos)])
+            (match-define (vector other-ticked other-posinfo)
+              co-inhabitant)
+            (unless (eq? other-ticked this-obj)
+              (collide-this other-ticked other-posinfo phase)
+              (collide-other other-ticked check-posinfo phase)))))]
+     ;; TODO: we're adding keyword arguments... we might want to accept at
+     ;;   this point that this should be named something else?  Dunno.
+     ;; TODO: I'm lost about what to do about this-obj-box
+
+     [(to-tick give-ticky #:points [points 0])
+      ($ orig-ticky 'to-tick
+         (λ (ticky)
+           (define new-obj-box (box #f))
+           (define customized-ticky
+             (spawn ^custom-ticky ticky new-obj-box))
+           (define new-refr
+             (give-ticky customized-ticky))
+           (set-box! new-obj-box new-refr)
+           new-refr))]))
+
+  ;; Define the player and spawn a ticked facet of it
+  ;; TODO: Yet another reduntant way of setting up the custom-ticky...
+  (define player-ship
+    ($ level-ticker 'to-tick
+       (lambda (ticky)
+         (define new-obj-box (box #f))
+         (define customized-ticky
+           (spawn ^custom-ticky ticky new-obj-box))
+         (define new-refr
+           (spawn ^player-ship customized-ticky lives))
+         (set-box! new-obj-box new-refr)
+         new-refr)))
+
+  (define terrain
+    ($ level-ticker 'to-tick
+       (lambda (ticky)
+         (spawn ^terrain))))
+
+  ;; TODO: Store last layout when generating the level
+  (define-cell last-layout)
+
+  (define (posinfo->vector-pos this-posinfo)
+    (+ (* LEVEL-HEIGHT (posinfo-x this-posinfo))
+       (posinfo-y this-posinfo)))
 
   ;; Calculate collisions and inform participants.
   ;; The big, general collision detection.

@@ -152,23 +152,8 @@
                         start-x y)
   (define-cell x start-x)
   (define-cell countdown BULLET-COUNTDOWN)
-  (methods
-   #:extends base-sprite
-   [(tick)
-    ;; advance x if appropriate
-    (cond
-      [(= ($ countdown) 0)
-       ($ x (+ ($ x) 2))
-       ($ countdown BULLET-COUNTDOWN)]
-      [else
-       (cell-sub1 countdown)])
 
-    (when (>= ($ x) LEVEL-WIDTH)
-      ;; we've gone too far
-      ($ ticky 'die))
-    (void)]
-   [(posinfo)
-    ;; Write head only if it hasn't gone oob
+  (define (get-posinfos)
     (define cur-x ($ x))
     (define head
       (posinfo (add1 ($ x)) y #\=
@@ -178,7 +163,34 @@
                'yellow 'player-bullet))
     (if (< (add1 cur-x) LEVEL-WIDTH)
         (list tail head)
-        tail)]
+        tail))
+
+  (methods
+   #:extends base-sprite
+   [(tick)
+    ;; advance x if appropriate
+    (cond
+      [(= ($ countdown) 0)
+       ($ x (+ ($ x) 2))
+       ;; See if we would have died based on our new position
+       ;; based on what was previously here; if so, die
+       ($ ticky 'last-collide
+          (get-posinfos) 'main-tick
+          (λ _ ($ ticky 'die)))
+       ;; Now decrease countdown
+       ($ countdown BULLET-COUNTDOWN)]
+      [else
+       (cell-sub1 countdown)])
+
+    (unless ($ ticky 'dead?)
+      (when (>= ($ x) LEVEL-WIDTH)
+        ;; we've gone too far
+        ($ ticky 'die)))
+
+    (void)]
+   [(posinfo)
+    ;; Write head only if it hasn't gone oob
+    (get-posinfos)]
    [(collide with with-posinfo phase)
     (match (posinfo-layer with-posinfo)
       [(or 'enemy 'enemy-bullet 'terrain)
