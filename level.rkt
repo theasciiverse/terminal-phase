@@ -262,7 +262,10 @@
                   enemy)))
            (match tile-char
              [#\<
-              (spawn-ticked-enemy ^enemy:< 10)]
+              (match flavor-char
+                [#\f (spawn-ticked-enemy ^enemy:<-firing 10)]
+                ;; default
+                [_ (spawn-ticked-enemy ^enemy:< 10)])]
              [#\S
               (spawn-ticked-enemy ^enemy:squiggler 10)]
              [#\^

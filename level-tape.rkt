@@ -7,6 +7,7 @@
 (define (read-level-tape level-text)
   (define text-lines
     (list->vector (string-split (string-trim level-text "\n"
+                                             #:left? #f
                                              #:right? #t
                                              #:repeat? #t)
                                 "\n")))

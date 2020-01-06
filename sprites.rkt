@@ -311,6 +311,10 @@
         [_ 'no-op])])))
 
 (define ^enemy:<
+  (mover-ship-constructor #\< 'brwhite
+                          #:fire no-op))
+
+(define ^enemy:<-firing
   (mover-ship-constructor #\< 'cyan))
 
 (define squiggler-pattern
