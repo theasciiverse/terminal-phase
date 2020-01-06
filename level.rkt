@@ -226,7 +226,7 @@
                     other-ticked other-posinfo 'super-collide)
                  (set-add! already-collided other-ticked)))))])))
 
-  (define (advance-level)
+  (define (advance-level [level-right-x (sub1 LEVEL-WIDTH)])
     (define cells-column
       ($ tape-eater))
     ;; For now we loop forever.  This won't be the case later,
@@ -235,9 +235,6 @@
       (set! tape-eater
             (spawn ^tape-eater level-tape))
       (set! cells-column ($ tape-eater)))
-
-    (define level-right-x
-      (sub1 LEVEL-WIDTH))
 
     ;; Now we walk through the column and build up the new
     ;; terrain-col
@@ -414,6 +411,10 @@
       (match evt
         [(or "q" " " "C-M")
          ($ dpr-pushdown 'pop)])]))
+
+  ;; Fast forward the level to its starting position
+  (for ([i LEVEL-WIDTH])
+    (advance-level i))
 
   ;; Do a first path of running collisions
   ;; (hopefully there aren't any immediately!)
