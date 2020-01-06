@@ -415,5 +415,9 @@
         [(or "q" " " "C-M")
          ($ dpr-pushdown 'pop)])]))
 
+  ;; Do a first path of running collisions
+  ;; (hopefully there aren't any immediately!)
+  (do-collisions)
+
   (running))
 
