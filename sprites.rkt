@@ -263,15 +263,17 @@
   'no-op)
 
 (define (mover-ship-constructor char color
+                                #:move-speed [move-speed enemy:<:move-speed]
+                                #:fire-speed [fire-speed enemy:<:fire-speed]
                                 #:move [move-proc move-forward]
                                 #:fire [fire-proc fire-forward])
   (lambda (bcom ticky initial-x initial-y)
     (define-cell x initial-x)
     (define-cell y initial-y)
     (define move-countdown
-      (spawn ^loopdown enemy:<:move-speed))
+      (spawn ^loopdown move-speed))
     (define fire-countdown
-      (spawn ^loopdown enemy:<:fire-speed (quotient enemy:<:fire-speed 2)))
+      (spawn ^loopdown fire-speed (quotient fire-speed 2)))
 
     (methods
      #:extends base-sprite
@@ -337,6 +339,7 @@
   (ship-constructor bcom ticky initial-x initial-y))
 
 (define (^enemy:nymph bcom ticky initial-x initial-y
+                      #:move-speed [move-speed 3]
                       #:shuf-countdown [shuf-countdown-every 5])
   (define shuf-countdown
     (spawn ^loopdown shuf-countdown-every))
@@ -357,6 +360,7 @@
 
   (define ship-constructor
     (mover-ship-constructor #\n 'magenta
+                            #:move-speed move-speed
                             #:fire never-fire
                             #:move shuf-closer))
 
