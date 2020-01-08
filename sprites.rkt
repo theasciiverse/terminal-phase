@@ -22,13 +22,9 @@
    [posinfo (const '())]
    [level-advance no-op]))
 
-(define (^player-ship bcom ticky lives
-                      #:initial-y [initial-y (floor (/ LEVEL-HEIGHT 2))]
-                      #:initial-x [initial-x 1])
+(define (^player-ship bcom ticky lives x y)
   (define-cell moved-this-tick? #f)
   (define-cell fire-cooldown 0)
-  (define-cell y initial-y)
-  (define-cell x initial-x)
 
   (define base-ship
     (methods
@@ -311,7 +307,7 @@
         [_ 'no-op])])))
 
 (define ^enemy:<
-  (mover-ship-constructor #\< 'brwhite
+  (mover-ship-constructor #\< 'yellow
                           #:fire no-op))
 
 (define ^enemy:<-firing
@@ -338,6 +334,32 @@
     (mover-ship-constructor #\S 'blue
                             #:move move-squiggle
                             #:fire never-fire))
+  (ship-constructor bcom ticky initial-x initial-y))
+
+(define (^enemy:nymph bcom ticky initial-x initial-y
+                      #:shuf-countdown [shuf-countdown-every 5])
+  (define shuf-countdown
+    (spawn ^loopdown shuf-countdown-every))
+
+  (define (shuf-closer ticky x y)
+    ;; first, move forward
+    (move-forward ticky x y)
+    ;; now determine if we need to "slide" closer to the player
+    (match-define (cons _player-x player-y)
+      ($ ticky 'player-pos))
+    (when ($ shuf-countdown 'zero?)
+      (cond
+        [(< ($ y) player-y)
+         (cell-add1 y)]
+        [(> ($ y) player-y)
+         (cell-sub1 y)]))
+    ($ shuf-countdown 'sub1))
+
+  (define ship-constructor
+    (mover-ship-constructor #\n 'magenta
+                            #:fire never-fire
+                            #:move shuf-closer))
+
   (ship-constructor bcom ticky initial-x initial-y))
 
 ;;; Bullets

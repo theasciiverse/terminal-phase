@@ -130,10 +130,10 @@
             (unless (eq? other-ticked this-obj)
               (collide-this other-ticked other-posinfo phase)
               (collide-other other-ticked check-posinfo phase)))))]
+
      ;; TODO: we're adding keyword arguments... we might want to accept at
      ;;   this point that this should be named something else?  Dunno.
      ;; TODO: I'm lost about what to do about this-obj-box
-
      [(to-tick give-ticky #:points [points 0])
       ($ orig-ticky 'to-tick
          (λ (ticky)
@@ -143,7 +143,14 @@
            (define new-refr
              (give-ticky customized-ticky))
            (set-box! new-obj-box new-refr)
-           new-refr))]))
+           new-refr))]
+
+     [(player-pos)
+      (cons ($ player-x) ($ player-y))]))
+
+  (define-cell player-x 1)
+  (define-cell player-y
+    (floor (/ LEVEL-HEIGHT 2)))
 
   ;; Define the player and spawn a ticked facet of it
   ;; TODO: Yet another reduntant way of setting up the custom-ticky...
@@ -153,10 +160,10 @@
          (define new-obj-box (box #f))
          (define customized-ticky
            (spawn ^custom-ticky ticky new-obj-box))
-         (define new-refr
-           (spawn ^player-ship customized-ticky lives))
-         (set-box! new-obj-box new-refr)
-         new-refr)))
+         (define player-refr
+           (spawn ^player-ship customized-ticky lives player-x player-y))
+         (set-box! new-obj-box player-refr)
+         player-refr)))
 
   (define terrain
     ($ level-ticker 'to-tick
@@ -267,7 +274,9 @@
                 ;; default
                 [_ (spawn-ticked-enemy ^enemy:< 10)])]
              [#\S
-              (spawn-ticked-enemy ^enemy:squiggler 10)]
+              (spawn-ticked-enemy ^enemy:squiggler 15)]
+             [#\n
+              (spawn-ticked-enemy ^enemy:nymph 20)]
              [#\^
               (spawn-ticked-enemy ^enemy-mine 10)]
              [_ 'no-op])
