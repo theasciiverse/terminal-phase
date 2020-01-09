@@ -277,6 +277,8 @@
               (spawn-ticked-enemy ^enemy:squiggler 15)]
              [#\n
               (spawn-ticked-enemy ^enemy:nymph 20)]
+             [#\K
+              (spawn-ticked-enemy ^enemy:kamikaze 20)]
              [#\^
               (spawn-ticked-enemy ^enemy-mine 10)]
              [_ 'no-op])

@@ -347,10 +347,10 @@
   (define (shuf-closer ticky x y)
     ;; first, move forward
     (move-forward ticky x y)
-    ;; now determine if we need to "slide" closer to the player
-    (match-define (cons _player-x player-y)
-      ($ ticky 'player-pos))
     (when ($ shuf-countdown 'zero?)
+      ;; now determine if we need to "slide" closer to the player
+      (match-define (cons _player-x player-y)
+        ($ ticky 'player-pos))
       (cond
         [(< ($ y) player-y)
          (cell-add1 y)]
@@ -365,6 +365,96 @@
                             #:move shuf-closer))
 
   (ship-constructor bcom ticky initial-x initial-y))
+
+;; Kamikaze moves in, tries to align itself with the player,
+;; locks on, and then RAPIDLY hurtles towards the player
+(define (^enemy:kamikaze bcom ticky initial-x initial-y)
+  (define-cell x initial-x)
+  (define-cell y initial-y)
+
+  (define base-kamikaze
+    (methods
+     #:extends base-sprite
+     [(posinfo)
+      (posinfo ($ x) ($ y) #\K 'brmagenta
+               'enemy)]
+     [(collide with with-posinfo phase)
+      (match (posinfo-layer with-posinfo)
+        [(or 'player-bullet 'player)
+         ;; time to die
+         ($ ticky 'die #:points? #t)]
+        ['terrain
+         ;; We can also die if we hit terrain but sorry, no points for
+         ;; that
+         ($ ticky 'die #:points? #f)]
+        [_ 'no-op])]))
+
+  (define (plod-in)
+    (define move-countdown
+      (spawn ^loopdown 5))
+    (define plods-left
+      (spawn ^countdown 2))
+
+    (methods
+     #:extends base-kamikaze
+     [(tick)
+      (when ($ move-countdown 'zero?)
+        (move-forward ticky x y)
+        ($ plods-left 'sub1))
+      ($ move-countdown 'sub1)
+      (when ($ plods-left 'zero?)
+        (bcom (aim-self)))]))
+
+  (define (aim-self)
+    (define shuf-countdown
+      (spawn ^loopdown 12))
+    (define shufs-left
+      (spawn ^countdown 8))
+
+    (methods
+     #:extends base-kamikaze
+     [(tick)
+      (when ($ shuf-countdown 'zero?)
+        (match-define (cons _player-x player-y)
+        ($ ticky 'player-pos))
+        (cond
+          [(< ($ y) player-y)
+           (cell-add1 y)]
+          [(> ($ y) player-y)
+           (cell-sub1 y)])
+        ($ shufs-left 'sub1))
+
+      ($ shuf-countdown 'sub1)
+
+      (when ($ shufs-left 'zero?)
+        (bcom (pause-and-flash)))]))
+
+  (define (pause-and-flash)
+    (define flash-countdown
+      (spawn ^countdown 15))
+
+    (methods
+     #:extends base-kamikaze
+     [(tick)
+      ($ flash-countdown 'sub1)
+      (when ($ flash-countdown 'zero?)
+        (bcom race-to-death))]
+     [(posinfo)
+      (posinfo ($ x) ($ y) #\K
+               (if (even? (quotient ($ flash-countdown 'counter) 5))
+                   'brwhite
+                   'brmagenta)
+               'enemy)]))
+
+  (define race-to-death
+    (methods
+     #:extends base-kamikaze
+     [(tick)
+      (move-forward ticky x y)
+      (when (oob? ($ x) ($ y))
+        ($ ticky 'die))]))
+
+  (plod-in))
 
 ;;; Bullets
 ;;; -------
