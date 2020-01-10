@@ -8,9 +8,7 @@
 (define (^aimer bcom
                 start-x start-y
                 target-x target-y
-                #:speed [speed .3]
-                ;; #:when-stop? [when-stop? 'target]
-                )
+                #:speed [speed .3])
   (define dx
     (- target-x start-x))
   (define dy
