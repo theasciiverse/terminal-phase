@@ -89,6 +89,9 @@
   (define tape-eater
     (spawn ^tape-eater level-tape))
 
+  (define-cell ticked-this-turn?
+    #f)
+
   (define level-ticker (spawn-ticker))
 
   ;; We add some extra methods to this ticky that let this object
@@ -146,7 +149,10 @@
            new-refr))]
 
      [(player-pos)
-      (cons ($ player-x) ($ player-y))]))
+      (cons ($ player-x) ($ player-y))]
+
+     [(ticked-this-turn?)
+      ($ ticked-this-turn?)]))
 
   (define-cell player-x 1)
   (define-cell player-y
@@ -370,12 +376,14 @@
     (methods
      #:extends base-methods
      [(tick)
+      ;; maybe advance tape
+      (if (zero? tape-countdown)
+          (begin ($ ticked-this-turn? #t)
+                 (advance-level))
+          ($ ticked-this-turn? #f))
+
       ;; Tick all the level items
       ($ level-ticker 'tick 'tick)
-
-      ;; maybe advance tape
-      (when (zero? tape-countdown)
-        (advance-level))
 
       ;; collision detection time
       (do-collisions)
