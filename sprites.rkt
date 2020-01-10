@@ -8,7 +8,8 @@
          "no-op.rkt"
          "posinfo.rkt"
          "level-const.rkt"
-         "loopdown.rkt")
+         "loopdown.rkt"
+         "aim.rkt")
 
 (require pk)
 
@@ -257,7 +258,7 @@
 (define (fire-forward ticky bullet-x bullet-y)
   ($ ticky 'to-tick
      (lambda (ticky)
-       (spawn ^enemy-bullet ticky bullet-x bullet-y))))
+       (spawn ^enemy-bullet:ray ticky bullet-x bullet-y))))
 
 (define (never-fire . args)
   'no-op)
@@ -456,13 +457,70 @@
 
   (plod-in))
 
+(define (screenslider-mixin base
+                            x y ticky)
+  (methods
+   #:extends base
+   [(level-advance)
+    (cell-sub1 x)
+    ;; die if we pass off screen
+    (when (oob? ($ x) ($ y))
+      ($ ticky 'die))]))
+
+(define turret-fire-speed
+  60)
+
+(define (^enemy:turret bcom ticky initial-x initial-y
+                       ;; #:health [initial-health 0]
+                       )
+  (define-cell x initial-x)
+  (define-cell y initial-y)
+
+  (define fire-cooldown
+    (spawn ^loopdown turret-fire-speed 30))
+
+  (methods
+   #:extends (screenslider-mixin base-sprite
+                                 x y ticky)
+   [(tick)
+    (when ($ fire-cooldown 'zero?)
+      ($ ticky 'to-tick
+         (λ (ticky)
+           (match-define (cons player-x player-y)
+             ($ ticky 'player-pos))
+           (spawn ^enemy-bullet:drifter ticky
+                  ($ x) ($ y)
+                  player-x player-y))))
+    
+    ($ fire-cooldown 'sub1)]
+
+   [(posinfo)
+    (posinfo ($ x) ($ y)
+             #\I 'brwhite
+             'enemy)]
+
+   [(collide with with-posinfo phase)
+    (match (posinfo-layer with-posinfo)
+      [(or 'player 'player-bullet)
+       ;; decrement health
+       ;; (cell-sub1 health)
+
+       ;; ;; flash!
+       ;; ($ flash-cooldown 8)
+
+       ;; (when (<= ($ health) 0)
+       ;;   ;; time to die
+       ;;   ($ ticky 'die #:points? #t))
+       ($ ticky 'die #:points? #t)]
+      [_ 'no-op])]))
+
 ;;; Bullets
 ;;; -------
 
 (define enemy-bullet:move-speed
   2)
 
-(define (^enemy-bullet bcom ticky x y)
+(define (^enemy-bullet:ray bcom ticky x y)
   (define-spawned move-countdown
     ^loopdown enemy-bullet:move-speed)
   (define (next x)
@@ -490,15 +548,56 @@
         [_ 'no-op])]))
   (next x))
 
-(define (screenslider-mixin base
-                            x y ticky)
+(define (^enemy-bullet:drifter bcom ticky
+                               start-x start-y
+                               target-x target-y
+                               #:speed [speed 0.2]
+                               #:lifetime [lifetime #f]
+                               #:char [char #\*]
+                               #:color [color 'brwhite]
+                               #:shootable? [shootable? #f]
+                               #:crashable? [crashable? #t])
+  (define aimer
+    (spawn ^aimer
+           start-x start-y
+           target-x target-y
+           #:speed speed))
+  (define lifetime-tracker
+    (and lifetime
+         (spawn ^countdown lifetime)))
+
   (methods
-   #:extends base
-   [(level-advance)
-    (cell-sub1 x)
-    ;; die if we pass off screen
-    (when (oob? ($ x) ($ y))
-      ($ ticky 'die))]))
+   #:extends base-sprite
+   [(tick)
+    ($ aimer 'move)
+
+    ;; decrement lifetime if appropriate
+    (when lifetime
+      (when ($ lifetime-tracker 'zero?)
+        ($ ticky 'die))
+      ($ lifetime-tracker 'sub1))
+
+    (match-define (vector x y)
+      ($ aimer 'pos))
+    (when ($ ticky 'oob? x y)
+      ($ ticky 'die))]
+   [(posinfo)
+    (match-define (vector x y)
+      ($ aimer 'pos))
+    (posinfo x y char color
+             'enemy-bullet)]
+   [(collide with with-posinfo phase)
+    (match (posinfo-layer with-posinfo)
+      ['player
+       ;; time to die
+       ($ ticky 'die)]
+      ['player-bullet
+       (when shootable?
+         ($ ticky 'die))]
+      ['terrain
+       (when crashable?
+         ($ ticky 'die))]
+      [_ 'no-op])]))
 
 (define (^enemy-mine bcom ticky initial-x initial-y)
   (define-cell x initial-x)
