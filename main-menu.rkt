@@ -14,9 +14,24 @@
   (define total-score
     (spawn ^total-score-tracker))
 
+  (define (start-game)
+    (define level-file
+      (match level-files
+        [(cons level-filename rest) level-filename]
+        [_ (build-path pwd (build-path "levels" "level1.txt"))]))
+    (define level-tape
+      (open-level-tape level-file))
+    (define level
+      (spawn ^level level-tape dpr-pushdown
+             ($ total-score 'sprout)))
+    ($ dpr-pushdown 'push level))
+
+  (define (show-help)
+    'TODO)
+
   (define menu-options
-    #("Play game!"
-      "Help"))
+    `#(("Play game!" ,start-game)
+       ("Help" ,show-help)))
 
   (define (next [selection 0])
     (methods
@@ -31,16 +46,9 @@
          (bcom (next (modulo (abs (sub1 selection))
                              (vector-length menu-options))))]
         [(or " " "C-M")
-         (define level-file
-           (match level-files
-             [(cons level-filename rest) level-filename]
-             [_ (build-path pwd (build-path "levels" "level1.txt"))]))
-         (define level-tape
-           (open-level-tape level-file))
-         (define level
-           (spawn ^level level-tape dpr-pushdown
-                  ($ total-score 'sprout)))
-         ($ dpr-pushdown 'push level)]
+         (match (vector-ref menu-options selection)
+           [(list _option-text option-func)
+            (option-func)])]
         ["q"
          ($ dpr-pushdown 'pop)]
         [_
@@ -49,14 +57,16 @@
       (define menu-items
         (for/list ([option menu-options]
                    [i (in-naturals)])
-          (if (= i selection)
-              (raart:fg 'bryellow
-                        (raart:text
-                         (string-append ">> "
-                                        option
-                                        " <<")))
-              (raart:fg 'white
-                        (raart:text option)))))
+          (match option
+            [(list option-text _option-func)
+             (if (= i selection)
+                 (raart:fg 'bryellow
+                           (raart:text
+                            (string-append ">> "
+                                           option-text
+                                           " <<")))
+                 (raart:fg 'white
+                           (raart:text option-text)))])))
       (raart:vappend
        #:halign 'center
        (raart:frame
