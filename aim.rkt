@@ -5,6 +5,10 @@
 (require goblins
          goblins/actor-lib/methods)
 
+;; We multiply the Y space by two and then scale it back down before
+;; applying because otherwise the speed is goofy since characters are
+;; so much taller than they are wide
+
 (define (^aimer bcom
                 start-x start-y
                 target-x target-y
@@ -12,12 +16,12 @@
   (define dx
     (- target-x start-x))
   (define dy
-    (- target-y start-y))
+    (* (- target-y start-y) 2.0))
   (define distance  ; or magnitude
     (sqrt (+ (* dx dx) (* dy dy))))
   (define normalized-dx
     (if (zero? distance)
-        0
+        0.0
         (/ dx distance)))
   (define normalized-dy
     (if (zero? distance)
@@ -29,7 +33,7 @@
       (define cur-x
         (+ start-x (* traveled normalized-dx)))
       (define cur-y
-        (+ start-y (* traveled normalized-dy)))
+        (+ start-y (/ (* traveled normalized-dy) 2.0)))
       (values cur-x cur-y))
     (methods
      [(move [speed speed])
