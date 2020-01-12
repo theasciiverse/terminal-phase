@@ -5,6 +5,7 @@
 (require (prefix-in raart: raart)
          goblins
          goblins/actor-lib/methods
+         "no-op.rkt"
          "level-tape.rkt"
          "level.rkt"
          "score.rkt"
@@ -27,7 +28,7 @@
     ($ dpr-pushdown 'push level))
 
   (define (show-help)
-    'TODO)
+    ($ dpr-pushdown 'push (spawn ^help-menu dpr-pushdown)))
 
   (define menu-options
     `#(("Play game!" ,start-game)
@@ -35,8 +36,7 @@
 
   (define (next [selection 0])
     (methods
-     [(tick)
-      'no-op]
+     [tick no-op]
      [(handle-event evt)
       (match evt
         ["<up>"
@@ -77,3 +77,19 @@
         #:halign 'center
         menu-items))]))
   (next))
+
+(define (^help-menu bcom dpr-pushdown)
+  (methods
+   [tick no-op]
+   [(handle-event evt)
+    ($ dpr-pushdown 'pop)]
+   [(render)
+    (raart:frame
+     (raart:vappend
+      #:halign 'center
+      (raart:text " Better help text coming soon, but... ")
+      (raart:blank 0 1)
+      (raart:text " Arrow keys: move ")
+      (raart:text " Space: fire")
+      (raart:blank 0 1)
+      (raart:text " ... that's it!  Good luck!")))]))
