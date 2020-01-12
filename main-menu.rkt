@@ -34,7 +34,7 @@
          (define level-file
            (match level-files
              [(cons level-filename rest) level-filename]
-             [_ (build-path pwd "level1.txt")]))
+             [_ (build-path pwd (build-path "levels" "level1.txt"))]))
          (define level-tape
            (open-level-tape level-file))
          (define level
