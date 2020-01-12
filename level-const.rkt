@@ -11,6 +11,9 @@
       (>= y LEVEL-HEIGHT)
       (< y 0)))
 
+(define default-terrain-speed
+  6)
+
 (define (terrain-halted? speed)
   (not speed))
 

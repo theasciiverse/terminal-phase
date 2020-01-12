@@ -48,9 +48,6 @@
   (vector->immutable-vector new-terrain))
 
 
-(define default-terrain-speed
-  8)
-
 (define (^terrain bcom [terrain-vec empty-terrain-vector])
   (define (terrain-ref x y)
     (vector-ref (vector-ref terrain-vec x) y))
@@ -249,14 +246,44 @@
                  (set-add! already-collided other-ticked)))))])))
 
   (define (advance-level [level-right-x (sub1 LEVEL-WIDTH)])
-    (define cells-column
+    (match-define (vector cells-column level-instructions)
       ($ tape-eater))
+
     ;; For now we loop forever.  This won't be the case later,
     ;; when levels will end.
     (unless cells-column
       (set! tape-eater
             (spawn ^tape-eater level-tape))
-      (set! cells-column ($ tape-eater)))
+      (match-let ([(vector new-cells-column new-level-instructions)
+                   ($ tape-eater)])
+        (set! cells-column new-cells-column)
+        (set! level-instructions new-level-instructions)))
+
+    ;; Process any level instructions.
+    (for ([level-instruction level-instructions])
+      (match level-instruction
+        [#\0 ($ terrain-speed 0)]
+        [#\1 ($ terrain-speed 1)]
+        [#\2 ($ terrain-speed 2)]
+        [#\3 ($ terrain-speed 3)]
+        [#\4 ($ terrain-speed 4)]
+        [#\5 ($ terrain-speed 5)]
+        [#\6 ($ terrain-speed 6)]
+        [#\7 ($ terrain-speed 7)]
+        [#\8 ($ terrain-speed 8)]
+        [#\9 ($ terrain-speed 9)]
+        [#\! ($ terrain-speed 10)]
+        [#\@ ($ terrain-speed 12)]
+        [#\# ($ terrain-speed 14)]
+        [#\$ ($ terrain-speed 16)]
+        [#\% ($ terrain-speed 18)]
+        [#\^ ($ terrain-speed 20)]
+        [#\& ($ terrain-speed 22)]
+        [#\& ($ terrain-speed 24)]
+        [#\* ($ terrain-speed 26)]
+        [#\( ($ terrain-speed 28)]
+        [#\) ($ terrain-speed 30)]
+        [_ 'no-op]))
 
     ;; Now we walk through the column and build up the new
     ;; terrain-col

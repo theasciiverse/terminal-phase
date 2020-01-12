@@ -11,21 +11,29 @@
                                              #:right? #t
                                              #:repeat? #t)
                                 "\n")))
-  (define split-line-num
+  (define split-line-nums
     (let lp ([lines (vector->list text-lines)]
              [count 0])
       (match lines
-        ['() #f]
+        ['() '()]
         [(list this-line rest-lines ...)
          (if (and (> (string-length this-line) 0)
                   (eq? (string-ref this-line 0) #\-))
-             count
+             (cons count (lp rest-lines (add1 count)))
              (lp rest-lines (add1 count)))])))
-  (define-values (flavor-lines tile-lines)
-    (if split-line-num
-        (values (vector-copy text-lines 0 split-line-num)
-                (vector-copy text-lines (add1 split-line-num)))
-        (values (vector) text-lines)))
+
+  (define-values (flavor-lines tile-lines level-instruction-lines)
+    (match split-line-nums
+      ['()
+       (values (vector) text-lines (vector))]
+      [(list first-split)
+       (values (vector-copy text-lines 0 first-split)
+               (vector-copy text-lines (add1 first-split))
+               (vector))]
+      [(list first-split second-split)
+       (values (vector-copy text-lines 0 first-split)
+               (vector-copy text-lines (add1 first-split) second-split)
+               (vector-copy text-lines (add1 second-split)))]))
   (define longest-tile-line
     (apply max (for/list ([l tile-lines])
                  (string-length l))))
@@ -58,6 +66,10 @@
                    (flavor-tiles rest-flavors
                                  rest-tiles))]))))
 
+
+  (define (strip-spaces cells)
+    (remove #\space cells))
+
   (define (col-ref i)
     (define (line-cells lines)
       (for/list ([line lines])
@@ -68,7 +80,10 @@
       (line-cells flavor-lines))
     (define tile-cells
       (line-cells tile-lines))
-    (flavor-tiles flavor-cells tile-cells))
+    (define level-instruction-cells
+      (line-cells level-instruction-lines))
+    (vector (flavor-tiles flavor-cells tile-cells)
+            (strip-spaces level-instruction-cells)))
 
   ;; Build up the stream
   (let lp ([i 0])
@@ -87,7 +102,7 @@
 ;; it reaches the end and returns #f
 (define ((^tape-eater bcom level-tape))
   (if (stream-empty? level-tape)
-      #f
+      (vector #f #f)
       (values (bcom (^tape-eater bcom
                                  (stream-rest level-tape)))
               (stream-first level-tape))))
@@ -113,25 +128,28 @@ bc
 
   (check-equal?
    (actormap-poke! am tape-eater)
-   '((#\a . #\1)
-     (#\b . #\2)
-     #f
-     #f
-     #f))
+   '#(((#\a . #\1)
+       (#\b . #\2)
+       #f
+       #f
+       #f)
+      ()))
   (check-equal?
    (actormap-poke! am tape-eater)
-   '(#f
-     (#\c . #f)
-     #f
-     (#\d . #\3)
-     #f))
+   '#((#f
+       (#\c . #f)
+       #f
+       (#\d . #\3)
+       #f)
+      ()))
   (check-equal?
    (actormap-poke! am tape-eater)
-   '((#\e . #f)
-     #f
-     (#\f . #f)
-     #f
-     (#\g . #\4)))
+   '#(((#\e . #f)
+       #f
+       (#\f . #f)
+       #f
+       (#\g . #\4))
+      ()))
   (check-equal?
    (actormap-poke! am tape-eater)
    #f))
