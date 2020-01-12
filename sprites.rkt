@@ -206,6 +206,16 @@
         (list tail head)
         tail))
 
+  (define (collide with with-posinfo phase)
+    (match (posinfo-layer with-posinfo)
+      [(or 'enemy 'terrain)
+       ;; time to die
+       ($ ticky 'die)]
+      ['enemy-bullet
+       (when ($ with 'kills-player-bullet?)
+         ($ ticky 'die))]
+      [_ 'no-op]))
+
   (methods
    #:extends base-sprite
    [(tick)
@@ -217,7 +227,7 @@
        ;; based on what was previously here; if so, die
        ($ ticky 'last-collide
           (get-posinfos) 'main-tick
-          (λ _ ($ ticky 'die)))
+          collide)
        ;; Now decrease countdown
        ($ countdown BULLET-COUNTDOWN)]
       [else
@@ -232,12 +242,7 @@
    [(posinfo)
     ;; Write head only if it hasn't gone oob
     (get-posinfos)]
-   [(collide with with-posinfo phase)
-    (match (posinfo-layer with-posinfo)
-      [(or 'enemy 'enemy-bullet 'terrain)
-       ;; time to die
-       ($ ticky 'die)]
-      [_ 'no-op])]))
+   [collide collide]))
 
 
 ;;; =======
@@ -545,7 +550,10 @@
         [(or 'player 'player-bullet 'terrain)
          ;; time to die
          ($ ticky 'die)]
-        [_ 'no-op])]))
+        [_ 'no-op])]
+     [(kills-player-bullet?)
+      #t]
+     ))
   (next x))
 
 (define (^enemy-bullet:drifter bcom ticky
@@ -597,7 +605,9 @@
       ['terrain
        (when crashable?
          ($ ticky 'die))]
-      [_ 'no-op])]))
+      [_ 'no-op])]
+   [(kills-player-bullet?)
+    shootable?]))
 
 (define (^enemy-mine bcom ticky initial-x initial-y)
   (define-cell x initial-x)
