@@ -246,101 +246,98 @@
                  (set-add! already-collided other-ticked)))))])))
 
   (define (advance-level [level-right-x (sub1 LEVEL-WIDTH)])
-    (match-define (vector cells-column level-instructions)
-      ($ tape-eater))
+    (call/ec
+     (lambda (return)
+       (match-define (vector cells-column level-instructions)
+         ($ tape-eater))
 
-    ;; For now we loop forever.  This won't be the case later,
-    ;; when levels will end.
-    (unless cells-column
-      (set! tape-eater
-            (spawn ^tape-eater level-tape))
-      (match-let ([(vector new-cells-column new-level-instructions)
-                   ($ tape-eater)])
-        (set! cells-column new-cells-column)
-        (set! level-instructions new-level-instructions)))
+       ;; For now we loop forever.  This won't be the case later,
+       ;; when levels will end.
+       (unless cells-column
+         (return 'level-over))
 
-    ;; Process any level instructions.
-    (for ([level-instruction level-instructions])
-      (match level-instruction
-        [#\0 ($ terrain-speed 0)]
-        [#\1 ($ terrain-speed 1)]
-        [#\2 ($ terrain-speed 2)]
-        [#\3 ($ terrain-speed 3)]
-        [#\4 ($ terrain-speed 4)]
-        [#\5 ($ terrain-speed 5)]
-        [#\6 ($ terrain-speed 6)]
-        [#\7 ($ terrain-speed 7)]
-        [#\8 ($ terrain-speed 8)]
-        [#\9 ($ terrain-speed 9)]
-        [#\! ($ terrain-speed 10)]
-        [#\@ ($ terrain-speed 12)]
-        [#\# ($ terrain-speed 14)]
-        [#\$ ($ terrain-speed 16)]
-        [#\% ($ terrain-speed 18)]
-        [#\^ ($ terrain-speed 20)]
-        [#\& ($ terrain-speed 22)]
-        [#\& ($ terrain-speed 24)]
-        [#\* ($ terrain-speed 26)]
-        [#\( ($ terrain-speed 28)]
-        [#\) ($ terrain-speed 30)]
-        [_ 'no-op]))
+       ;; Process any level instructions.
+       (for ([level-instruction level-instructions])
+         (match level-instruction
+           [#\0 ($ terrain-speed 0)]
+           [#\1 ($ terrain-speed 1)]
+           [#\2 ($ terrain-speed 2)]
+           [#\3 ($ terrain-speed 3)]
+           [#\4 ($ terrain-speed 4)]
+           [#\5 ($ terrain-speed 5)]
+           [#\6 ($ terrain-speed 6)]
+           [#\7 ($ terrain-speed 7)]
+           [#\8 ($ terrain-speed 8)]
+           [#\9 ($ terrain-speed 9)]
+           [#\! ($ terrain-speed 10)]
+           [#\@ ($ terrain-speed 12)]
+           [#\# ($ terrain-speed 14)]
+           [#\$ ($ terrain-speed 16)]
+           [#\% ($ terrain-speed 18)]
+           [#\^ ($ terrain-speed 20)]
+           [#\& ($ terrain-speed 22)]
+           [#\& ($ terrain-speed 24)]
+           [#\* ($ terrain-speed 26)]
+           [#\( ($ terrain-speed 28)]
+           [#\) ($ terrain-speed 30)]
+           [_ 'no-op]))
 
-    ;; Now we walk through the column and build up the new
-    ;; terrain-col
-    (define terrain-col
-      (for/fold ([terrain-cells '()]
-                 #:result (list->vector
-                           (reverse terrain-cells)))
-                ([cell cells-column]
-                 [y (in-naturals)])
-        (match cell
-          [(cons #\# _)
-           (cons #t terrain-cells)]
-          [(cons tile-char flavor-char)
-           (define (spawn-ticked-enemy constructor points)
-             ($ level-ticker 'to-tick
-                (λ (ticky)
-                  (define obj-box
-                    (box #f))
-                  (define score-ticky
-                    (spawn ^custom-ticky ticky obj-box
-                           #:points points))
-                  (define enemy
-                    (spawn constructor score-ticky level-right-x y))
-                  (set-box! obj-box enemy)
-                  enemy)))
-           (match tile-char
-             [#\<
-              (match flavor-char
-                [#\f (spawn-ticked-enemy ^enemy:<-firing 10)]
-                [#\F (spawn-ticked-enemy ^enemy:<-firing-collides 10)]
-                ;; default
-                [_ (spawn-ticked-enemy ^enemy:< 10)])]
-             [#\S
-              (match flavor-char
-                [#\s
-                 (spawn-ticked-enemy ^enemy:slightly-slow-squiggler 15)]
-                [_ (spawn-ticked-enemy ^enemy:squiggler 15)])]
-             [#\n
-              (spawn-ticked-enemy ^enemy:nymph 20)]
-             [#\K
-              (spawn-ticked-enemy ^enemy:kamikaze 20)]
-             [#\I
-              (spawn-ticked-enemy ^enemy:turret 40)]
-             [#\^
-              (spawn-ticked-enemy ^enemy-mine 10)]
-             [_ 'no-op])
-           (cons #f terrain-cells)]
-          [#f
-           (cons #f terrain-cells)])))
-    
-    ($ terrain 'push-col terrain-col)
+       ;; Now we walk through the column and build up the new
+       ;; terrain-col
+       (define terrain-col
+         (for/fold ([terrain-cells '()]
+                    #:result (list->vector
+                              (reverse terrain-cells)))
+                   ([cell cells-column]
+                    [y (in-naturals)])
+           (match cell
+             [(cons #\# _)
+              (cons #t terrain-cells)]
+             [(cons tile-char flavor-char)
+              (define (spawn-ticked-enemy constructor points)
+                ($ level-ticker 'to-tick
+                   (λ (ticky)
+                     (define obj-box
+                       (box #f))
+                     (define score-ticky
+                       (spawn ^custom-ticky ticky obj-box
+                              #:points points))
+                     (define enemy
+                       (spawn constructor score-ticky level-right-x y))
+                     (set-box! obj-box enemy)
+                     enemy)))
+              (match tile-char
+                [#\<
+                 (match flavor-char
+                   [#\f (spawn-ticked-enemy ^enemy:<-firing 10)]
+                   [#\F (spawn-ticked-enemy ^enemy:<-firing-collides 10)]
+                   ;; default
+                   [_ (spawn-ticked-enemy ^enemy:< 10)])]
+                [#\S
+                 (match flavor-char
+                   [#\s
+                    (spawn-ticked-enemy ^enemy:slightly-slow-squiggler 15)]
+                   [_ (spawn-ticked-enemy ^enemy:squiggler 15)])]
+                [#\n
+                 (spawn-ticked-enemy ^enemy:nymph 20)]
+                [#\K
+                 (spawn-ticked-enemy ^enemy:kamikaze 20)]
+                [#\I
+                 (spawn-ticked-enemy ^enemy:turret 40)]
+                [#\^
+                 (spawn-ticked-enemy ^enemy-mine 10)]
+                [_ 'no-op])
+              (cons #f terrain-cells)]
+             [#f
+              (cons #f terrain-cells)])))
+       
+       ($ terrain 'push-col terrain-col)
 
-    ;; Inform all ticked items that the level has advanced
-    ($ level-ticker 'foldr
-       (λ (ticked _)
-         ($ ticked 'level-advance))
-       #f))
+       ;; Inform all ticked items that the level has advanced
+       ($ level-ticker 'foldr
+          (λ (ticked _)
+            ($ ticked 'level-advance))
+          #f))))
 
   (define base-methods
     (methods
@@ -414,27 +411,36 @@
     (methods
      #:extends base-methods
      [(tick)
-      ;; maybe advance tape
-      (if (zero? tape-countdown)
-          (begin ($ ticked-this-turn? #t)
-                 (advance-level))
-          ($ ticked-this-turn? #f))
+      (call/ec
+       (lambda (return)
+         ;; maybe advance tape
+         (cond
+           [(zero? tape-countdown)
+            ($ ticked-this-turn? #t)
+            (define advance-result
+              (advance-level))
+            ;; Level's over?  End it now by congratulating
+            ;; the player!
+            (when (eq? advance-result 'level-over)
+              (return (bcom you-win)))]
+           [else
+            ($ ticked-this-turn? #f)])
 
-      ;; Tick all the level items
-      ($ level-ticker 'tick 'tick)
+         ;; Tick all the level items
+         ($ level-ticker 'tick 'tick)
 
-      ;; collision detection time
-      (do-collisions)
+         ;; collision detection time
+         (do-collisions)
 
-      (cond
-        [($ player-ship 'dead?)
-         (bcom game-over)]
-        [else
-         ;; decrement/reset tape counter
-         (bcom (running
-                (if (zero? tape-countdown)
-                    ($ terrain-speed)
-                    (sub1 tape-countdown))))])]
+         (cond
+           [($ player-ship 'dead?)
+            (bcom game-over)]
+           [else
+            ;; decrement/reset tape counter
+            (bcom (running
+                   (if (zero? tape-countdown)
+                       ($ terrain-speed)
+                       (sub1 tape-countdown))))])))]
 
      [(handle-event evt)
       (match evt
@@ -453,14 +459,14 @@
         [_
          'no-op])]))
 
-  (define game-over
+  (define (say-it-state say-this)
     (methods
      #:extends base-methods
      [(render)
       (define game-render
         (base-methods 'render))
       (define game-over-box
-        (raart:frame (raart:text " Game Over! ")))
+        (raart:frame say-this))
       ;; place the game-over-box centered
       (raart:place-at
        game-render
@@ -472,7 +478,14 @@
      [(handle-event evt)
       (match evt
         [(or "q" " " "C-M")
-         ($ dpr-pushdown 'pop)])]))
+         ($ dpr-pushdown 'pop)]
+        [_ 'no-op])]))
+
+  (define game-over
+    (say-it-state (raart:text " Game Over! ")))
+
+  (define you-win
+    (say-it-state (raart:text " You win! ")))
 
   ;; Fast forward the level to its starting position
   (for ([i LEVEL-WIDTH])
