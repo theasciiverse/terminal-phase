@@ -2,7 +2,8 @@
 
 (provide ^loopdown ^countdown)
 
-(require goblins/actor-lib/methods)
+(require goblins/actor-lib/methods
+         racket/match)
 
 (define (^countdown bcom start-at)
   (define (next n)
@@ -17,17 +18,24 @@
       (bcom (next start-at))]))
   (next start-at))
 
+(define (next-step steps)
+  (match steps
+    [(? number?)
+     steps]
+    [(? procedure?)
+     (steps)]))
+
 ;; counts down, but loops
-(define (^loopdown bcom steps [start-at steps])
-  (define loop-mod
-    (add1 steps))
+(define (^loopdown bcom steps [start-at (next-step steps)])
   (define (next n)
     (methods
      [(counter) n]
      [(zero?)
       (zero? n)]
      [(sub1)
-      (bcom (next (modulo (sub1 n) loop-mod)))]))
+      (if (zero? n)
+          (bcom (next (next-step steps)))
+          (bcom (next (sub1 n))))]))
   (next start-at))
 
 (module+ test
@@ -91,4 +99,54 @@
   (actormap-poke! am cdown 'reset)
   (check-equal?
    (actormap-peek am cdown 'counter)
-   2))
+   2)
+
+  (define ldown-proc
+    (actormap-spawn! am ^loopdown
+                     (let ([n 1])
+                       (lambda ()
+                         (let ([cur-n n])
+                           (set! n (add1 n))
+                           cur-n)))))
+  
+  (check-equal?
+   (actormap-peek am ldown-proc 'counter)
+   1)
+  (check-equal?
+   (actormap-peek am ldown-proc 'zero?)
+   #f)
+  (actormap-poke! am ldown-proc 'sub1)
+  (check-equal?
+   (actormap-peek am ldown-proc 'counter)
+   0)
+  (check-equal?
+   (actormap-peek am ldown-proc 'zero?)
+   #t)
+  (actormap-poke! am ldown-proc 'sub1)
+  (check-equal?
+   (actormap-peek am ldown-proc 'counter)
+   2)
+  (check-equal?
+   (actormap-peek am ldown-proc 'zero?)
+   #f)
+  (actormap-poke! am ldown-proc 'sub1)
+  (check-equal?
+   (actormap-peek am ldown-proc 'counter)
+   1)
+  (check-equal?
+   (actormap-peek am ldown-proc 'zero?)
+   #f)
+  (actormap-poke! am ldown-proc 'sub1)
+  (check-equal?
+   (actormap-peek am ldown-proc 'counter)
+   0)
+  (check-equal?
+   (actormap-peek am ldown-proc 'zero?)
+   #t)
+  (actormap-poke! am ldown-proc 'sub1)
+  (check-equal?
+   (actormap-peek am ldown-proc 'counter)
+   3)
+  (check-equal?
+   (actormap-peek am ldown-proc 'zero?)
+   #f))
