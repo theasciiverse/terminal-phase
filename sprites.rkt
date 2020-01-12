@@ -330,12 +330,11 @@
   (mover-ship-constructor #\< 'green
                           #:fire fire-collide-ray))
 
-
-
 (define squiggler-pattern
   #(-1 -1 0 0 0 +1 +1 +1 0 0 0 -1))
 
-(define (^enemy:squiggler bcom ticky initial-x initial-y)
+(define (^enemy:squiggler bcom ticky initial-x initial-y
+                          #:slightly-slow? [slightly-slow? #f])
   (define squiggle-pos
     (spawn ^loopdown (sub1 (vector-length squiggler-pattern))))
   (define (move-squiggle ticky x y)
@@ -350,11 +349,20 @@
     ($ squiggle-pos 'sub1))
   
   (define ship-constructor
-    (mover-ship-constructor #\S 'blue
-                            #:move-speed 4
+    (mover-ship-constructor #\S
+                            (if slightly-slow?
+                                'blue
+                                'brblue)
+                            #:move-speed (if slightly-slow?
+                                             enemy:<:move-speed
+                                             (- enemy:<:move-speed 1))
                             #:move move-squiggle
                             #:fire never-fire))
   (ship-constructor bcom ticky initial-x initial-y))
+
+(define (^enemy:slightly-slow-squiggler bcom ticky initial-x initial-y)
+  (^enemy:squiggler bcom ticky initial-x initial-y
+                    #:slightly-slow? #t))
 
 (define (^enemy:nymph bcom ticky initial-x initial-y
                       #:move-speed [move-speed 3]

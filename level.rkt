@@ -317,7 +317,10 @@
                 ;; default
                 [_ (spawn-ticked-enemy ^enemy:< 10)])]
              [#\S
-              (spawn-ticked-enemy ^enemy:squiggler 15)]
+              (match flavor-char
+                [#\s
+                 (spawn-ticked-enemy ^enemy:slightly-slow-squiggler 15)]
+                [_ (spawn-ticked-enemy ^enemy:squiggler 15)])]
              [#\n
               (spawn-ticked-enemy ^enemy:nymph 20)]
              [#\K
