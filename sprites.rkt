@@ -351,6 +351,7 @@
   
   (define ship-constructor
     (mover-ship-constructor #\S 'blue
+                            #:move-speed 4
                             #:move move-squiggle
                             #:fire never-fire))
   (ship-constructor bcom ticky initial-x initial-y))
