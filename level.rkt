@@ -286,6 +286,7 @@
              [#\<
               (match flavor-char
                 [#\f (spawn-ticked-enemy ^enemy:<-firing 10)]
+                [#\F (spawn-ticked-enemy ^enemy:<-firing-collides 10)]
                 ;; default
                 [_ (spawn-ticked-enemy ^enemy:< 10)])]
              [#\S

@@ -260,10 +260,15 @@
 (define (move-forward ticky x y)
   (cell-sub1 x))
 
-(define (fire-forward ticky bullet-x bullet-y)
+(define ((make-fire-ray #:collide? [collide? #f])
+         ticky bullet-x bullet-y)
   ($ ticky 'to-tick
      (lambda (ticky)
-       (spawn ^enemy-bullet:ray ticky bullet-x bullet-y))))
+       (spawn ^enemy-bullet:ray ticky bullet-x bullet-y
+              #:collide? collide?))))
+
+(define fire-ray (make-fire-ray))
+(define fire-collide-ray (make-fire-ray #:collide? #t))
 
 (define (never-fire . args)
   'no-op)
@@ -272,7 +277,7 @@
                                 #:move-speed [move-speed enemy:<:move-speed]
                                 #:fire-speed [fire-speed enemy:<:fire-speed]
                                 #:move [move-proc move-forward]
-                                #:fire [fire-proc fire-forward])
+                                #:fire [fire-proc fire-ray])
   (lambda (bcom ticky initial-x initial-y)
     (define-cell x initial-x)
     (define-cell y initial-y)
@@ -320,6 +325,12 @@
 
 (define ^enemy:<-firing
   (mover-ship-constructor #\< 'cyan))
+
+(define ^enemy:<-firing-collides
+  (mover-ship-constructor #\< 'green
+                          #:fire fire-collide-ray))
+
+
 
 (define squiggler-pattern
   #(-1 -1 0 0 0 +1 +1 +1 0 0 0 -1))
@@ -473,7 +484,7 @@
       ($ ticky 'die))]))
 
 (define turret-fire-speed
-  60)
+  80)
 
 (define (^enemy:turret bcom ticky initial-x initial-y
                        ;; #:health [initial-health 0]
@@ -525,7 +536,8 @@
 (define enemy-bullet:move-speed
   2)
 
-(define (^enemy-bullet:ray bcom ticky x y)
+(define (^enemy-bullet:ray bcom ticky x y
+                           #:collide? [collide? #t])
   (define-spawned move-countdown
     ^loopdown enemy-bullet:move-speed)
   (define (next x)
@@ -543,16 +555,22 @@
         [else
          (bcom (next next-x))])]
      [(posinfo)
-      (posinfo x y #\- 'brcyan
+      (posinfo x y #\-
+               (if collide?
+                   'brcyan
+                   'brwhite)
                'enemy-bullet)]
      [(collide with with-posinfo phase)
       (match (posinfo-layer with-posinfo)
-        [(or 'player 'player-bullet 'terrain)
+        [(or 'player 'terrain)
          ;; time to die
          ($ ticky 'die)]
+        ['player-bullet
+         (when collide?
+           ($ ticky 'die))]
         [_ 'no-op])]
      [(kills-player-bullet?)
-      #t]
+      collide?]
      ))
   (next x))
 
