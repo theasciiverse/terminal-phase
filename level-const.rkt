@@ -10,3 +10,21 @@
       (< x 0)
       (>= y LEVEL-HEIGHT)
       (< y 0)))
+
+(define (terrain-halted? speed)
+  (not speed))
+
+(define (terrain-screaming? speed)
+  (<= speed 2))
+
+(define (terrain-very-fast? speed)
+  (<= speed 4))
+
+(define (terrain-fast? speed)
+  (< speed 6))
+
+(define (terrain-normal? speed)
+  (eqv? speed 6))
+
+(define (terrain-slow? speed)
+  (> speed 6))
