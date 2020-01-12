@@ -48,6 +48,9 @@
   (vector->immutable-vector new-terrain))
 
 
+(define default-terrain-speed
+  8)
+
 (define (^terrain bcom [terrain-vec empty-terrain-vector])
   (define (terrain-ref x y)
     (vector-ref (vector-ref terrain-vec x) y))
@@ -91,6 +94,9 @@
 
   (define-cell ticked-this-turn?
     #f)
+
+  (define-cell terrain-speed
+    default-terrain-speed)
 
   (define level-ticker (spawn-ticker))
 
@@ -152,7 +158,10 @@
       (cons ($ player-x) ($ player-y))]
 
      [(ticked-this-turn?)
-      ($ ticked-this-turn?)]))
+      ($ ticked-this-turn?)]
+
+     [(terrain-speed)
+      ($ terrain-speed)]))
 
   (define-cell player-x 1)
   (define-cell player-y
@@ -302,8 +311,6 @@
          ($ ticked 'level-advance))
        #f))
 
-  (define TERRAIN-SPEED 6)
-
   (define base-methods
     (methods
      [(render)
@@ -372,7 +379,7 @@
      ;; you'll need to implement handle-event though
      [tick no-op]))
 
-  (define (running [tape-countdown TERRAIN-SPEED])
+  (define (running [tape-countdown ($ terrain-speed)])
     (methods
      #:extends base-methods
      [(tick)
@@ -395,7 +402,7 @@
          ;; decrement/reset tape counter
          (bcom (running
                 (if (zero? tape-countdown)
-                    TERRAIN-SPEED
+                    ($ terrain-speed)
                     (sub1 tape-countdown))))])]
 
      [(handle-event evt)
