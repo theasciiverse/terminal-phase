@@ -257,8 +257,8 @@
 ;;    is passed off to the player
 ;;  - handles the display, usually (unless you override it)
 
-(define (setup-healthy-mixin ticky initial-health
-                           #:hit-color [hit-color 'brwhite])
+(define (make-healthy-mixin ticky initial-health
+                            #:hit-color [hit-color 'brwhite])
   ;; TODO: This is a bit wasteful, because there's no need to track
   ;;   health or flashing if the character doesn't have health.
   (define health
@@ -693,7 +693,7 @@
   (define-cell x initial-x)
   (define-cell y initial-y)
   (define base-mixin
-    (setup-healthy-mixin ticky 2))
+    (make-healthy-mixin ticky 2))
 
   (base-mixin
    (methods
