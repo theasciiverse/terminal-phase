@@ -554,43 +554,47 @@
   (define-cell x initial-x)
   (define-cell y initial-y)
 
+  (define healthy-mixin
+    (make-healthy-mixin ticky 3
+                        #:hit-color 'brred))
+
   (define fire-cooldown
     (spawn ^loopdown turret-fire-speed 30))
 
-  (methods
-   #:extends (screenslider-mixin base-enemy
-                                 x y ticky)
-   [(tick)
-    (when ($ fire-cooldown 'zero?)
-      ($ ticky 'to-tick
-         (λ (ticky)
-           (match-define (cons player-x player-y)
-             ($ ticky 'player-pos))
-           (spawn ^enemy-bullet:drifter ticky
-                  ($ x) ($ y)
-                  player-x player-y))))
-    
-    ($ fire-cooldown 'sub1)]
+  (healthy-mixin
+   (methods
+    #:extends (screenslider-mixin base-enemy
+                                  x y ticky)
+    [(tick)
+     (when ($ fire-cooldown 'zero?)
+       ($ ticky 'to-tick
+          (λ (ticky)
+            (match-define (cons player-x player-y)
+              ($ ticky 'player-pos))
+            (spawn ^enemy-bullet:drifter ticky
+                   ($ x) ($ y)
+                   player-x player-y))))
+     ($ fire-cooldown 'sub1)]
 
-   [(posinfo)
-    (posinfo ($ x) ($ y)
-             #\I 'brwhite
-             'enemy)]
+    [(posinfo)
+     (posinfo ($ x) ($ y)
+              #\I 'brwhite
+              'enemy)]
 
-   [(collide with with-posinfo phase)
-    (match (posinfo-layer with-posinfo)
-      [(or 'player 'player-bullet)
-       ;; decrement health
-       ;; (cell-sub1 health)
+    [(collide with with-posinfo phase)
+     (match (posinfo-layer with-posinfo)
+       [(or 'player 'player-bullet)
+        ;; decrement health
+        ;; (cell-sub1 health)
 
-       ;; ;; flash!
-       ;; ($ flash-cooldown 8)
+        ;; ;; flash!
+        ;; ($ flash-cooldown 8)
 
-       ;; (when (<= ($ health) 0)
-       ;;   ;; time to die
-       ;;   ($ ticky 'die #:points? #t))
-       ($ ticky 'die #:points? #t)]
-      [_ 'no-op])]))
+        ;; (when (<= ($ health) 0)
+        ;;   ;; time to die
+        ;;   ($ ticky 'die #:points? #t))
+        ($ ticky 'die #:points? #t)]
+       [_ 'no-op])])))
 
 ;;; Bullets
 ;;; -------
@@ -692,10 +696,10 @@
 (define (^enemy-mine bcom ticky initial-x initial-y)
   (define-cell x initial-x)
   (define-cell y initial-y)
-  (define base-mixin
+  (define healthy-mixin
     (make-healthy-mixin ticky 2))
 
-  (base-mixin
+  (healthy-mixin
    (methods
     #:extends (screenslider-mixin base-enemy
                                   x y ticky)
