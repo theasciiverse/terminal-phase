@@ -5,7 +5,7 @@
 (require goblins/actor-lib/methods
          racket/match)
 
-(define (^countdown bcom start-at)
+(define (^countdown bcom steps [start-at steps])
   (define (next n)
     (methods
      [(counter) n]
@@ -15,7 +15,7 @@
       (unless (zero? n)
         (bcom (next (sub1 n))))]
      [(reset)
-      (bcom (next start-at))]))
+      (bcom (next steps))]))
   (next start-at))
 
 (define (next-step steps)
