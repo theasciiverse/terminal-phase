@@ -372,11 +372,15 @@
                   ([layer render-layer-order])
           (for/fold ([canvas canvas])
                     ([this-posinfo (hash-ref blit-layers layer '())])
-            (match-define (posinfo x y char color layer-type)
+            (match-define (posinfo x y char color layer-type bg-color)
               this-posinfo)
-            (raart:place-at canvas y x
-                            (raart:fg color
-                                      (raart:char char))))))
+            (define colored-char
+              (raart:fg color (raart:char char)))
+            (define bg-char
+              (if bg-color
+                  (raart:bg bg-color colored-char)
+                  colored-char))
+            (raart:place-at canvas y x bg-char))))
 
       (define footer
         (raart:place-at

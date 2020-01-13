@@ -8,6 +8,15 @@
 (struct posinfo
   (x y              ; x & y coords
    char color       ; character and color
-   layer)           ; used both for rendering-order and collision category
+   layer            ; used both for rendering-order and collision category
+   bg-color)        ; background color (or #f)
   #:transparent)
 
+(define (make-posinfo x y char color layer #:bg [bg-color #f])
+  (posinfo x y char color layer bg-color))
+
+(module+ simpler-posinfo
+  (provide (rename-out [make-posinfo posinfo])
+           posinfo-x posinfo-y
+           posinfo-char posinfo-color
+           posinfo-layer posinfo-bg-color))

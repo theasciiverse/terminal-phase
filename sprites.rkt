@@ -6,7 +6,7 @@
          goblins/actor-lib/methods
          goblins/actor-lib/add-sub
          "no-op.rkt"
-         "posinfo.rkt"
+         (submod "posinfo.rkt" simpler-posinfo)
          "level-const.rkt"
          "loopdown.rkt"
          "aim.rkt")
@@ -249,6 +249,9 @@
 ;;; Enemies
 ;;; =======
 
+;; alias, for now.  but we may add methods later
+(define base-enemy base-sprite)
+
 ;;; Ships
 ;;; -----
 
@@ -287,7 +290,7 @@
       (spawn ^loopdown fire-speed (quotient fire-speed 2)))
 
     (methods
-     #:extends base-sprite
+     #:extends base-enemy
      [(tick)
       (when ($ move-countdown 'zero?)
         (move-proc ticky x y))
@@ -400,7 +403,7 @@
 
   (define base-kamikaze
     (methods
-     #:extends base-sprite
+     #:extends base-enemy
      [(posinfo)
       (posinfo ($ x) ($ y) #\K 'brmagenta
                'enemy)]
@@ -505,7 +508,7 @@
     (spawn ^loopdown turret-fire-speed 30))
 
   (methods
-   #:extends (screenslider-mixin base-sprite
+   #:extends (screenslider-mixin base-enemy
                                  x y ticky)
    [(tick)
     (when ($ fire-cooldown 'zero?)
@@ -643,7 +646,7 @@
   (define-cell flash-cooldown 0)
 
   (methods
-   #:extends (screenslider-mixin base-sprite
+   #:extends (screenslider-mixin base-enemy
                                  x y ticky)
    [(tick)
     (when (positive? ($ flash-cooldown))
