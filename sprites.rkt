@@ -462,13 +462,9 @@
                'enemy)]
      [(collide with with-posinfo phase)
       (match (posinfo-layer with-posinfo)
-        [(or 'player-bullet 'player)
+        [(or 'player 'terrain)
          ;; time to die
-         ($ ticky 'die #:points? #t)]
-        ['terrain
-         ;; We can also die if we hit terrain but sorry, no points for
-         ;; that
-         ($ ticky 'die #:points? #f)]
+         ($ ticky 'die)]
         [_ 'no-op])]))
 
   (define (plod-in)
