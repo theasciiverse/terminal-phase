@@ -252,6 +252,56 @@
 ;; alias, for now.  but we may add methods later
 (define base-enemy base-sprite)
 
+;;  - tracks health
+;;  - handles PLAYER BULLET collisions only.  Other collision handling
+;;    is passed off to the player
+;;  - handles the display, usually (unless you override it)
+
+(define (setup-healthy-mixin ticky initial-health
+                           #:hit-color [hit-color 'brwhite])
+  ;; TODO: This is a bit wasteful, because there's no need to track
+  ;;   health or flashing if the character doesn't have health.
+  (define health
+    (spawn ^countdown initial-health))
+
+  (define flashing
+    (spawn ^countdown 6 0))
+
+  (define (hit-posinfo pinfo)
+    (recolor-posinfo pinfo hit-color))
+
+  (define (mixin base)
+    (methods
+     #:extends base
+     ;; remove one from the flashing counter then apply base tick
+     ;; method
+     [(tick)
+      ($ flashing 'sub1)
+      (base 'tick)]
+     [(collide with with-posinfo phase)
+      (cond
+        ;; Got hit by a player bullet...
+        [(eq? (posinfo-layer with-posinfo) 'player-bullet)
+         ($ health 'sub1)
+         ($ flashing 'reset)
+         (when ($ health 'zero?)
+           ($ ticky 'die
+              #:points? #t))]
+        ;; otherwise, let the base handle it
+        [else (base 'collide with with-posinfo phase)])]
+     [(posinfo)
+      (define base-posinfos
+        (base 'posinfo))
+      (if ($ flashing 'zero?)
+          ;; not flashing, show it as-is
+          base-posinfos
+          ;; otherwise, we need to invert all of them
+          (if (pair? base-posinfos)
+              (map hit-posinfo base-posinfos)
+              (hit-posinfo base-posinfos)))]))
+  mixin)
+
+
 ;;; Ships
 ;;; -----
 
@@ -570,7 +620,7 @@
       (posinfo x y #\-
                (if collide?
                    'brcyan
-                   'brwhite)
+                   'white)
                'enemy-bullet)]
      [(collide with with-posinfo phase)
       (match (posinfo-layer with-posinfo)
@@ -642,31 +692,21 @@
 (define (^enemy-mine bcom ticky initial-x initial-y)
   (define-cell x initial-x)
   (define-cell y initial-y)
-  (define-cell health 2)
-  (define-cell flash-cooldown 0)
+  (define base-mixin
+    (setup-healthy-mixin ticky 2))
 
-  (methods
-   #:extends (screenslider-mixin base-enemy
-                                 x y ticky)
-   [(tick)
-    (when (positive? ($ flash-cooldown))
-      (cell-sub1 flash-cooldown))]
-   [(posinfo)
-    (posinfo ($ x) ($ y)
-             #\^ (if (> ($ flash-cooldown) 0)
-                     'brwhite
-                     'brgreen)
-             'enemy)]
-   [(collide with with-posinfo phase)
-    (match (posinfo-layer with-posinfo)
-      [(or 'player 'player-bullet)
-       ;; decrement health
-       (cell-sub1 health)
-
-       ;; flash!
-       ($ flash-cooldown 8)
-
-       (when (<= ($ health) 0)
-         ;; time to die
-         ($ ticky 'die #:points? #t))]
-      [_ 'no-op])]))
+  (base-mixin
+   (methods
+    #:extends (screenslider-mixin base-enemy
+                                  x y ticky)
+    [(posinfo)
+     (posinfo ($ x) ($ y)
+              #\^ 'brgreen
+              'enemy)]
+    ;; Additionally, we die if a player collides with us
+    [(collide with with-posinfo phase)
+     (match (posinfo-layer with-posinfo)
+       ['player
+        ;; time to die
+        ($ ticky 'die #:points? #t)]
+       [_ 'no-op])])))
