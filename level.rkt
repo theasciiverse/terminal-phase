@@ -62,7 +62,7 @@
         (if (terrain-ref x y)
             (cons (posinfo x y
                            #\# 'red
-                           'terrain)
+                           'terrain #f)
                   posinfos)
             posinfos))))
 
