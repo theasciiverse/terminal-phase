@@ -451,6 +451,9 @@
   (define-cell x initial-x)
   (define-cell y initial-y)
 
+  (define healthy-mixin
+    (make-healthy-mixin ticky 3))
+
   (define base-kamikaze
     (methods
      #:extends base-enemy
@@ -474,15 +477,16 @@
     (define plods-left
       (spawn ^countdown 2))
 
-    (methods
-     #:extends base-kamikaze
-     [(tick)
-      (when ($ move-countdown 'zero?)
-        (move-forward ticky x y)
-        ($ plods-left 'sub1))
-      ($ move-countdown 'sub1)
-      (when ($ plods-left 'zero?)
-        (bcom (aim-self)))]))
+    (healthy-mixin
+     (methods
+      #:extends base-kamikaze
+      [(tick)
+       (when ($ move-countdown 'zero?)
+         (move-forward ticky x y)
+         ($ plods-left 'sub1))
+       ($ move-countdown 'sub1)
+       (when ($ plods-left 'zero?)
+         (bcom (aim-self)))])))
 
   (define (aim-self)
     (define shuf-countdown
@@ -490,48 +494,51 @@
     (define shufs-left
       (spawn ^countdown 8))
 
-    (methods
-     #:extends base-kamikaze
-     [(tick)
-      (when ($ shuf-countdown 'zero?)
-        (match-define (cons _player-x player-y)
-        ($ ticky 'player-pos))
-        (cond
-          [(< ($ y) player-y)
-           (cell-add1 y)]
-          [(> ($ y) player-y)
-           (cell-sub1 y)])
-        ($ shufs-left 'sub1))
+    (healthy-mixin
+     (methods
+      #:extends base-kamikaze
+      [(tick)
+       (when ($ shuf-countdown 'zero?)
+         (match-define (cons _player-x player-y)
+           ($ ticky 'player-pos))
+         (cond
+           [(< ($ y) player-y)
+            (cell-add1 y)]
+           [(> ($ y) player-y)
+            (cell-sub1 y)])
+         ($ shufs-left 'sub1))
 
-      ($ shuf-countdown 'sub1)
+       ($ shuf-countdown 'sub1)
 
-      (when ($ shufs-left 'zero?)
-        (bcom (pause-and-flash)))]))
+       (when ($ shufs-left 'zero?)
+         (bcom (pause-and-flash)))])))
 
   (define (pause-and-flash)
     (define flash-countdown
       (spawn ^countdown 15))
 
-    (methods
-     #:extends base-kamikaze
-     [(tick)
-      ($ flash-countdown 'sub1)
-      (when ($ flash-countdown 'zero?)
-        (bcom race-to-death))]
-     [(posinfo)
-      (posinfo ($ x) ($ y) #\K
-               (if (even? (quotient ($ flash-countdown 'counter) 5))
-                   'brwhite
-                   'brmagenta)
-               'enemy)]))
+    (healthy-mixin
+     (methods
+      #:extends base-kamikaze
+      [(tick)
+       ($ flash-countdown 'sub1)
+       (when ($ flash-countdown 'zero?)
+         (bcom race-to-death))]
+      [(posinfo)
+       (posinfo ($ x) ($ y) #\K
+                (if (even? (quotient ($ flash-countdown 'counter) 5))
+                    'red
+                    'brmagenta)
+                'enemy)])))
 
   (define race-to-death
-    (methods
-     #:extends base-kamikaze
-     [(tick)
-      (move-forward ticky x y)
-      (when (oob? ($ x) ($ y))
-        ($ ticky 'die))]))
+    (healthy-mixin
+     (methods
+      #:extends base-kamikaze
+      [(tick)
+       (move-forward ticky x y)
+       (when (oob? ($ x) ($ y))
+         ($ ticky 'die))])))
 
   (plod-in))
 
@@ -581,19 +588,11 @@
               #\I 'brwhite
               'enemy)]
 
+    ;; we also die on player impact
     [(collide with with-posinfo phase)
      (match (posinfo-layer with-posinfo)
-       [(or 'player 'player-bullet)
-        ;; decrement health
-        ;; (cell-sub1 health)
-
-        ;; ;; flash!
-        ;; ($ flash-cooldown 8)
-
-        ;; (when (<= ($ health) 0)
-        ;;   ;; time to die
-        ;;   ($ ticky 'die #:points? #t))
-        ($ ticky 'die #:points? #t)]
+       ['player
+        ($ ticky 'die)]
        [_ 'no-op])])))
 
 ;;; Bullets
