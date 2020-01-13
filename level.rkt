@@ -160,6 +160,9 @@
      [(terrain-speed)
       ($ terrain-speed)]))
 
+  (define-cell loop?
+    #f)
+
   (define-cell player-x 1)
   (define-cell player-y
     (floor (/ LEVEL-HEIGHT 2)))
@@ -254,7 +257,18 @@
        ;; For now we loop forever.  This won't be the case later,
        ;; when levels will end.
        (unless cells-column
-         (return 'level-over))
+         (cond
+           ;; We're set to loop infinitely... ok
+           [($ loop?)
+            (set! tape-eater
+                  (spawn ^tape-eater level-tape))
+            (match-let ([(vector new-cells-column new-level-instructions)
+                         ($ tape-eater)])
+              (set! cells-column new-cells-column)
+              (set! level-instructions new-level-instructions))]
+           ;; otherwise the level completed
+           [else
+            (return 'level-over)]))
 
        ;; Process any level instructions.
        (for ([level-instruction level-instructions])
@@ -280,6 +294,7 @@
            [#\* ($ terrain-speed 26)]
            [#\( ($ terrain-speed 28)]
            [#\) ($ terrain-speed 30)]
+           [#\L ($ loop? #t)]
            [_ 'no-op]))
 
        ;; Now we walk through the column and build up the new
