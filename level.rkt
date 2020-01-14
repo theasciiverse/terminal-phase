@@ -82,6 +82,32 @@
    ;;   Not sure.
    [level-advance no-op]))
 
+(define terrain-speed-control-chars
+  #hasheq((#\0 . 0)
+          (#\1 . 1)
+          (#\2 . 2)
+          (#\3 . 3)
+          (#\4 . 4)
+          (#\5 . 5)
+          (#\6 . 6)
+          (#\7 . 7)
+          (#\8 . 8)
+          (#\9 . 9)
+          (#\! . 10)
+          (#\@ . 12)
+          (#\# . 14)
+          (#\$ . 16)
+          (#\% . 18)
+          (#\^ . 20)
+          (#\& . 22)
+          (#\& . 24)
+          (#\* . 26)
+          (#\( . 28)
+          (#\) . 30)))
+
+(define (terrain-speed-char? char)
+  (hash-has-key? terrain-speed-control-chars char))
+
 (define (^level bcom level-tape dpr-pushdown score-tracker)
   (define-cell lives
     3)
@@ -273,27 +299,11 @@
        ;; Process any level instructions.
        (for ([level-instruction level-instructions])
          (match level-instruction
-           [#\0 ($ terrain-speed 0)]
-           [#\1 ($ terrain-speed 1)]
-           [#\2 ($ terrain-speed 2)]
-           [#\3 ($ terrain-speed 3)]
-           [#\4 ($ terrain-speed 4)]
-           [#\5 ($ terrain-speed 5)]
-           [#\6 ($ terrain-speed 6)]
-           [#\7 ($ terrain-speed 7)]
-           [#\8 ($ terrain-speed 8)]
-           [#\9 ($ terrain-speed 9)]
-           [#\! ($ terrain-speed 10)]
-           [#\@ ($ terrain-speed 12)]
-           [#\# ($ terrain-speed 14)]
-           [#\$ ($ terrain-speed 16)]
-           [#\% ($ terrain-speed 18)]
-           [#\^ ($ terrain-speed 20)]
-           [#\& ($ terrain-speed 22)]
-           [#\& ($ terrain-speed 24)]
-           [#\* ($ terrain-speed 26)]
-           [#\( ($ terrain-speed 28)]
-           [#\) ($ terrain-speed 30)]
+           [(? terrain-speed-char?)
+            (define new-speed
+              (hash-ref terrain-speed-control-chars
+                        level-instruction))
+            ($ terrain-speed new-speed)]
            [#\L ($ loop? #t)]
            [_ 'no-op]))
 
