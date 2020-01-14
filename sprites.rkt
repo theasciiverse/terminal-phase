@@ -574,9 +574,11 @@
           (λ (ticky)
             (match-define (cons player-x player-y)
               ($ ticky 'player-pos))
-            (spawn ^enemy-bullet:drifter ticky
-                   ($ x) ($ y)
-                   player-x player-y))))
+            (unless (and (eqv? ($ x) player-x)
+                         (eqv? ($ y) player-y))
+              (spawn ^enemy-bullet:drifter ticky
+                     ($ x) ($ y)
+                     player-x player-y)))))
      ($ fire-cooldown 'sub1)]
 
     [(posinfo)
@@ -644,6 +646,10 @@
                                #:color [color 'brwhite]
                                #:shootable? [shootable? #f]
                                #:crashable? [crashable? #t])
+  (when (and (eqv? start-x target-x)
+             (eqv? start-y target-y))
+    (error "Can't fire at self"))
+
   (define aimer
     (spawn ^aimer
            start-x start-y
