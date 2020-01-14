@@ -1,6 +1,6 @@
 #lang racket
 
-(provide ^level)
+(provide ^level ^level-manager)
 
 (require pk)
 
@@ -108,7 +108,7 @@
 (define (terrain-speed-char? char)
   (hash-has-key? terrain-speed-control-chars char))
 
-(define (^level bcom level-tape dpr-pushdown score-tracker)
+(define (^level bcom level-tape score-tracker)
   (define-cell lives
     3)
 
@@ -122,6 +122,8 @@
     default-terrain-speed)
 
   (define level-ticker (spawn-ticker))
+
+  (define-cell exit-reason #f)
 
   ;; We add some extra methods to this ticky that let this object
   ;; do some things:
@@ -366,6 +368,7 @@
 
   (define base-methods
     (methods
+     [(exit-reason) ($ exit-reason)]
      [(render)
       (define header
         (raart:fg 'brwhite
@@ -484,37 +487,37 @@
         [" "
          ($ player-ship 'fire)]
         ["q"
-         ($ dpr-pushdown 'pop)]
+         ($ exit-reason 'quit)]
         [_
          'no-op])]))
 
-  (define (say-it-state say-this)
+  (define (say-it-state say-this give-exit-reason)
     (methods
      #:extends base-methods
      [(render)
       (define game-render
         (base-methods 'render))
-      (define game-over-box
+      (define say-over-box
         (raart:frame say-this))
-      ;; place the game-over-box centered
+      ;; place the say-over-box centered
       (raart:place-at
        game-render
        (- (quotient (raart:raart-h game-render) 2)
-          (quotient (raart:raart-h game-over-box) 2))
+          (quotient (raart:raart-h say-over-box) 2))
        (- (quotient (raart:raart-w game-render) 2)
-          (quotient (raart:raart-w game-over-box) 2))
-       game-over-box)]
+          (quotient (raart:raart-w say-over-box) 2))
+       say-over-box)]
      [(handle-event evt)
       (match evt
         [(or "q" " " "C-M")
-         ($ dpr-pushdown 'pop)]
+         ($ exit-reason give-exit-reason)]
         [_ 'no-op])]))
 
   (define game-over
-    (say-it-state (raart:text " Game Over! ")))
+    (say-it-state (raart:text " Game Over! ") 'game-over))
 
   (define you-win
-    (say-it-state (raart:text " You win! ")))
+    (say-it-state (raart:text " You win! ") 'beat-level))
 
   ;; Fast forward the level to its starting position
   (for ([i LEVEL-WIDTH])
@@ -525,4 +528,47 @@
   (do-collisions)
 
   (running))
+
+(define (^level-manager bcom levels dpr-pushdown score-tracker)
+  (define (next-level-state levels)
+    (if (stream-empty? levels)
+        (credits)
+        (playing levels)))
+  (define (playing levels)
+    (define level-tape
+      (stream-first levels))
+    (define level
+      (spawn ^level level-tape score-tracker))
+    
+    (define (maybe-handle-exit-method)
+      (define exit-reason
+        ($ level 'exit-reason))
+      (match exit-reason
+        [#f 'no-op]
+        [(or 'quit 'game-over)
+         ($ dpr-pushdown 'pop)]
+        ['beat-level
+         (bcom (next-level-state (stream-rest levels)))]))
+
+    (methods
+     #:extends level
+     [(tick)
+      ;; tick the level first
+      ($ level 'tick)
+      (maybe-handle-exit-method)]
+     [(handle-event evt)
+      ($ level 'handle-event evt)
+      (maybe-handle-exit-method)]))
+  (define (credits)
+    (methods
+     [(render)
+      (raart:frame
+       (raart:text " omg you beet it heres da credits "))]
+     [tick no-op]
+     [(handle-event evt)
+      (match evt
+        [(or "q" " " "C-M")
+         ($ dpr-pushdown 'pop)]
+        [_ 'no-op])]))
+  (next-level-state levels))
 

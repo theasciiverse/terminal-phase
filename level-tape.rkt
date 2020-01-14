@@ -1,6 +1,7 @@
 #lang racket
 
-(provide read-level-tape open-level-tape ^tape-eater)
+(provide read-level-tape open-level-tape ^tape-eater
+         list->levels-stream)
 
 ;; Separate level text into flavor lines, tile lines, and count
 ;; of longest tile line
@@ -106,6 +107,13 @@
       (values (bcom (^tape-eater bcom
                                  (stream-rest level-tape)))
               (stream-first level-tape))))
+
+(define (list->levels-stream filenames)
+  (match filenames
+    ['() empty-stream]
+    [(cons this-filename rest-filenames)
+     (stream-cons (open-level-tape this-filename)
+                  (list->levels-stream rest-filenames))]))
 
 (module+ test
   (require goblins

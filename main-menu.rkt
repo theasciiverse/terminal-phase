@@ -16,16 +16,18 @@
     (spawn ^total-score-tracker))
 
   (define (start-game)
-    (define level-file
+    (define levels-stream
       (match level-files
-        [(cons level-filename rest) level-filename]
-        [_ (build-path pwd (build-path "levels" "level1.txt"))]))
-    (define level-tape
-      (open-level-tape level-file))
-    (define level
-      (spawn ^level level-tape dpr-pushdown
+        [(? pair?)
+         (list->levels-stream level-files)]
+        [_ (list->levels-stream
+            (map (λ (fname)
+                   (build-path pwd (build-path "levels" fname)))
+                 '("level1.txt" "level2.txt")))]))
+    (define level-manager
+      (spawn ^level-manager levels-stream dpr-pushdown
              ($ total-score 'sprout)))
-    ($ dpr-pushdown 'push level))
+    ($ dpr-pushdown 'push level-manager))
 
   (define (show-help)
     ($ dpr-pushdown 'push (spawn ^help-menu dpr-pushdown)))
