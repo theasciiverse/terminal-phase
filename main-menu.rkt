@@ -73,7 +73,7 @@
       (raart:vappend
        #:halign 'center
        (raart:frame (raart:inset 1 0 (raart:fg 'brwhite logo-raart)))
-       (raart:blank 0 5)
+       (raart:blank 0 3)
        (apply
         raart:vappend
         #:halign 'center
