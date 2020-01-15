@@ -306,7 +306,7 @@
 ;;; -----
 
 (define enemy:<:move-speed
-  5)
+  4)
 (define enemy:<:fire-speed
   (* enemy:<:move-speed 20))
 
@@ -337,7 +337,7 @@
     (define move-countdown
       (spawn ^loopdown move-speed))
     (define fire-countdown
-      (spawn ^loopdown fire-speed (quotient fire-speed 2)))
+      (spawn ^loopdown fire-speed (quotient fire-speed 3)))
 
     (methods
      #:extends base-enemy
@@ -407,8 +407,7 @@
                                 'blue
                                 'brblue)
                             #:move-speed (if slightly-slow?
-                                             enemy:<:move-speed
-                                             (- enemy:<:move-speed 1))
+                                             5 4)
                             #:move move-squiggle
                             #:fire never-fire))
   (ship-constructor bcom ticky initial-x initial-y))
