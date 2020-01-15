@@ -581,7 +581,7 @@
                      player-x player-y
                      ;; Penalize bullets that are moving to the right
                      ;; to handle visual weirdness
-                     #:speed (if (> (- player-x ($ x)) 1)
+                     #:speed (if (>= (- player-x ($ x)) 0)
                                  0.115 .2))))))
      ($ fire-cooldown 'sub1)]
 
