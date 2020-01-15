@@ -32,3 +32,21 @@
   (map (lambda (v)
          (val->raart v))
        lst))
+
+(define (spaced-blank w h)
+  (define canvas
+    (raart:blank w h))
+  (for/fold ([canvas canvas])
+            ([h-i h])
+    (for/fold ([canvas canvas])
+              ([w-i w])
+      (raart:place-at canvas h-i w-i
+                      (raart:char #\space)))))
+
+(define (center-over back front)
+  (raart:place-at back
+                  (- (quotient (raart:raart-h back) 2)
+                     (quotient (raart:raart-h front) 2))
+                  (- (quotient (raart:raart-w back) 2)
+                     (quotient (raart:raart-w front) 2))
+                  front))

@@ -24,19 +24,44 @@
 ;;; Game infrastructure
 ;;; ===================
 
-(define (raart-render-game dispatcher gw)
-  (define width
-    (game-display-cols gw))
-  (define height
-    (game-display-rows gw))
-  (raart:bg
-   'black
-   (raart:matte
-    width height
-    (raart:place-cursor-after
-     (val->raart (or ($ dispatcher 'render)
-                     (raart:blank 0 0)))
-     0 0))))
+(define (make-raart-render-game)
+  (define prev-width
+    #f)
+  (define prev-height
+    #f)
+  (define cached-blank
+    #f)
+
+  (λ (dispatcher gw)
+    ;; Find out what we're going to render and see if a special
+    ;; background color is specified (otherwise use black)
+    (define-values (to-display bg-color)
+      (call-with-values
+       (λ ()
+         ($ dispatcher 'render))
+       (λ (to-display [bg-color 'black])
+         (values (or to-display (raart:blank 0 0))
+                 bg-color))))
+    ;; Get the width and height
+    (define width
+      (game-display-cols gw))
+    (define height
+      (game-display-rows gw))
+
+    ;; Regenerate and cache the blank if necessary
+    (unless (and cached-blank
+                 (= width prev-width)
+                 (= height prev-height))
+      (set! prev-width width)
+      (set! prev-height height)
+      (set! cached-blank
+            (spaced-blank width height)))
+
+    (raart:fg 'white
+              (raart:bg 'black (center-over cached-blank to-display)))))
+
+(define current-renderer
+  (make-parameter (make-raart-render-game)))
 
 ;;; Each column is a single column of current terrain.
 ;;; They're happend'ed together.
@@ -83,7 +108,7 @@
             #f gw)]))
    (define (word-output gw)
      (define (compose-display)
-       (raart-render-game (game-dispatch-stack gw) gw))
+       ((current-renderer) (game-dispatch-stack gw) gw))
      ;; Return the raart to be displayed.
      ;; Note that we use actormap-run rather than -run! because
      ;; there shouldn't be any applicable side effects.
