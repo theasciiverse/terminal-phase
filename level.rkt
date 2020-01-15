@@ -18,10 +18,10 @@
 (define render-layer-order
   '(powerup
     explosion
-    enemy
+    terrain
     enemy-bullet
     player-bullet
-    terrain
+    enemy
     player))
 
 (define (make-empty-terrain-vector)
@@ -353,6 +353,8 @@
                  (spawn-ticked-enemy ^enemy:turret 40)]
                 [#\^
                  (spawn-ticked-enemy ^enemy-mine 10)]
+                [#\Y
+                 (spawn-ticked-enemy ^enemy:ominous-hover 30)]
                 [_ 'no-op])
               (cons #f terrain-cells)]
              [#f
