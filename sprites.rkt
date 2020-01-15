@@ -710,7 +710,7 @@
                                   x y ticky)
     [(posinfo)
      (posinfo ($ x) ($ y)
-              #\^ 'brgreen
+              #\+ 'brgreen
               'enemy)]
     ;; Additionally, we die if a player collides with us
     [(collide with with-posinfo phase)
