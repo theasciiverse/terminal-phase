@@ -29,12 +29,14 @@
     (game-display-cols gw))
   (define height
     (game-display-rows gw))
-  (raart:matte
-   width height
-   (raart:place-cursor-after
-    (val->raart (or ($ dispatcher 'render)
-                    (raart:blank 0 0)))
-    0 0)))
+  (raart:bg
+   'black
+   (raart:matte
+    width height
+    (raart:place-cursor-after
+     (val->raart (or ($ dispatcher 'render)
+                     (raart:blank 0 0)))
+     0 0))))
 
 ;;; Each column is a single column of current terrain.
 ;;; They're happend'ed together.
