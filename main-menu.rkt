@@ -8,6 +8,7 @@
          "no-op.rkt"
          "level-tape.rkt"
          "level.rkt"
+         "logo.rkt"
          "score.rkt"
          "pwd.rkt")
 
@@ -71,8 +72,7 @@
                            (raart:text option-text)))])))
       (raart:vappend
        #:halign 'center
-       (raart:frame
-        (raart:text " TERMINAL PHASE "))
+       (raart:frame (raart:inset 1 0 (raart:fg 'brwhite logo-raart)))
        (raart:blank 0 5)
        (apply
         raart:vappend
