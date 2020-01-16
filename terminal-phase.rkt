@@ -109,11 +109,23 @@
    (define (word-output gw)
      (define (compose-display)
        ((current-renderer) (game-dispatch-stack gw) gw))
-     ;; Return the raart to be displayed.
-     ;; Note that we use actormap-run rather than -run! because
-     ;; there shouldn't be any applicable side effects.
-     (actormap-run (game-actormap gw)
-                   compose-display))
+     (define cols (game-display-cols gw))
+     (define rows (game-display-rows gw))
+     (define too-small?
+       (or (< rows 22)
+           (< cols 60)))
+     (cond
+       [too-small?
+        (raart:vappend
+         #:halign 'left
+         (raart:text "Terminal too small!")
+         (raart:text "60x22 minimum!"))]
+       [else
+        ;; Return the raart to be displayed.
+        ;; Note that we use actormap-run rather than -run! because
+        ;; there shouldn't be any applicable side effects.
+        (actormap-run (game-actormap gw)
+                      compose-display)]))
    (define (word-label gw frame-time)
      (define game-name "> Terminal Phase <")
      (if (show-fps?)
