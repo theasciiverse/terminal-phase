@@ -5,6 +5,7 @@
 (require (prefix-in raart: raart)
          goblins
          goblins/actor-lib/methods
+         "credits.rkt"
          "no-op.rkt"
          "level-tape.rkt"
          "level.rkt"
@@ -33,9 +34,13 @@
   (define (show-help)
     ($ dpr-pushdown 'push (spawn ^help-menu dpr-pushdown)))
 
+  (define (show-credits)
+    ($ dpr-pushdown 'push (spawn ^credits dpr-pushdown)))
+
   (define menu-options
     `#(("Play game!" ,start-game)
-       ("Help" ,show-help)))
+       ("Help" ,show-help)
+       ("Show Credits" ,show-credits)))
 
   (define (next [selection 0])
     (methods
