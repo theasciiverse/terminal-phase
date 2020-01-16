@@ -366,15 +366,17 @@
             ($ ticked 'level-advance))
           #f))))
 
+  (define header
+    (raart:fg 'brwhite
+              (raart:text ".-*[ TERMINAL PHASE ]*-.")))
+  (define blank-level-canvas
+    (raart:blank LEVEL-WIDTH LEVEL-HEIGHT))
+
   (define base-methods
     (methods
      [(exit-reason) ($ exit-reason)]
      [(render)
-      (define header
-        (raart:fg 'brwhite
-                  (raart:text ".-*[ TERMINAL PHASE ]*-.")))
-      (define blank-level-canvas
-        (raart:blank LEVEL-WIDTH LEVEL-HEIGHT))
+
       
       (define blit-layers
         ($ level-ticker 'foldr
