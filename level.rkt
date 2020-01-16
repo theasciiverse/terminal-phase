@@ -517,7 +517,7 @@
     (say-it-state (raart:text " Game Over! ") 'game-over))
 
   (define you-win
-    (say-it-state (raart:text " You win! ") 'beat-level))
+    (say-it-state (raart:text " Success! ") 'beat-level))
 
   ;; Fast forward the level to its starting position
   (for ([i LEVEL-WIDTH])
