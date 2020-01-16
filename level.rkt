@@ -509,7 +509,7 @@
        say-over-box)]
      [(handle-event evt)
       (match evt
-        [(or "q" " " "C-M")
+        [(or "q" " " "C-M" "C-[")
          ($ exit-reason give-exit-reason)]
         [_ 'no-op])]))
 
@@ -567,7 +567,7 @@
      [tick no-op]
      [(handle-event evt)
       (match evt
-        [(or "q" " " "C-M")
+        [(or "q" " " "C-M" "C-[")
          ($ dpr-pushdown 'pop)]
         [_ 'no-op])]))
   (next-level-state levels))

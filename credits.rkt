@@ -76,7 +76,7 @@
      [tick no-op]
      [(handle-event evt)
       (match evt
-        [(or "q" "C-M")
+        [(or "q" "C-M" "C-[" " ")
          ($ dpr-pushdown 'pop)]
         [_
          'no-op])]
