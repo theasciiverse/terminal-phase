@@ -43,10 +43,10 @@
      [(handle-event evt)
       (match evt
         ["<up>"
-         (bcom (next (modulo (add1 selection)
+         (bcom (next (modulo (sub1 selection)
                              (vector-length menu-options))))]
         ["<down>"
-         (bcom (next (modulo (abs (sub1 selection))
+         (bcom (next (modulo (add1 selection)
                              (vector-length menu-options))))]
         [(or " " "C-M")
          (match (vector-ref menu-options selection)
