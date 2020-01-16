@@ -13,7 +13,8 @@
          "level-const.rkt"
          "level-tape.rkt"
          "posinfo.rkt"
-         "raart-render.rkt")
+         "raart-render.rkt"
+         "credits.rkt")
 
 (define render-layer-order
   '(powerup
@@ -108,10 +109,7 @@
 (define (terrain-speed-char? char)
   (hash-has-key? terrain-speed-control-chars char))
 
-(define (^level bcom level-tape score-tracker)
-  (define-cell lives
-    3)
-
+(define (^level bcom level-tape score-tracker lives)
   (define tape-eater
     (spawn ^tape-eater level-tape))
 
@@ -530,15 +528,18 @@
   (running))
 
 (define (^level-manager bcom levels dpr-pushdown score-tracker)
+  (define-cell lives
+    3)
+
   (define (next-level-state levels)
     (if (stream-empty? levels)
-        (credits)
+        (victory)
         (playing levels)))
   (define (playing levels)
     (define level-tape
       (stream-first levels))
     (define level
-      (spawn ^level level-tape score-tracker))
+      (spawn ^level level-tape score-tracker lives))
     
     (define (maybe-handle-exit-method)
       (define exit-reason
@@ -559,16 +560,29 @@
      [(handle-event evt)
       ($ level 'handle-event evt)
       (maybe-handle-exit-method)]))
-  (define (credits)
+  (define (victory)
     (methods
      [(render)
       (raart:frame
-       (raart:text " omg you beet it heres da credits "))]
+       (raart:vappend
+        #:halign 'center
+        (raart:text " YOU WIN THE GAME ")
+        (raart:text "")
+        (raart:text " Having fought mighty foes, ")
+        (raart:text " you held on strong and have emerged ")
+        (raart:text " victorious!  Congratulations! ")
+        (raart:text "")
+        (raart:text "")
+        (raart:text " (... upcoming releases will have ")
+        (raart:text " more levels!) ")))]
      [tick no-op]
      [(handle-event evt)
       (match evt
         [(or "q" " " "C-M" "C-[")
-         ($ dpr-pushdown 'pop)]
+         ($ dpr-pushdown 'pop)
+         ;; and now push on the credits
+         ($ dpr-pushdown 'push
+            (spawn ^credits dpr-pushdown))]
         [_ 'no-op])]))
   (next-level-state levels))
 
