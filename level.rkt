@@ -376,8 +376,6 @@
     (methods
      [(exit-reason) ($ exit-reason)]
      [(render)
-
-      
       (define blit-layers
         ($ level-ticker 'foldr
            (lambda (ticked layers)
