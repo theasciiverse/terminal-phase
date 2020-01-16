@@ -28,7 +28,8 @@
                 /       |        \
 
 
-                       TODO
+                    Nick + Lp
+
 
 > SHOW "PLAYER SHIP"
 
@@ -51,7 +52,11 @@
                | MEGA  SUPPORTERS |
                '=================='
 
-                       TODO
+                     DJ Sundog
+
+                  James Valleroy
+
+               Jonathan Frederickson
 
 
 > SHOW "FIRING AT ENEMIES"
@@ -78,7 +83,14 @@
                   | SUPPORTERS |
                   '------------'
 
-                       TODO
+                 Charles Stanhope
+
+                  Craig Maloney
+
+                      elmiko
+
+                    Tim Howes
+
 
         (and many more anonymous supporters!)
 
