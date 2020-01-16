@@ -115,7 +115,7 @@
      (actormap-run (game-actormap gw)
                    compose-display))
    (define (word-label gw frame-time)
-     (define game-name "Spaaaaaaace!")
+     (define game-name "> Terminal Phase <")
      (if (show-fps?)
          (lux-standard-label game-name frame-time)
          game-name))
