@@ -18,7 +18,7 @@
     (λ (p)
       (string-split (port->string p) "\n"))))
 
-(define (^text-buffer bcom num-lines)
+(define (^text-buffer bcom num-lines width)
   (define (next [wip-line '()]
                 ;; We store all but one in here...
                 ;; that last one is in the wip-line
@@ -44,19 +44,31 @@
                     0
                     (sub1 (vector-length stored-lines)))
       (bcom (next '() new-stored-lines))]
-     [(render)
-      (raart:vappend
-       #:halign 'left
-       (raart:vappend*
-        #:halign 'left
-        (reverse (vector->list stored-lines)))
-       (wip-line->raart))]))
+     [(render [with-cursor? #f])
+      (define the-text
+        (raart:vappend
+         #:halign 'left
+         (raart:vappend*
+          #:halign 'left
+          (reverse (vector->list stored-lines)))
+         (wip-line->raart)))
+      (define matted
+        (raart:matte width num-lines
+                     #:halign 'left
+                     the-text))
+      (define with-cursor
+        (if with-cursor?
+            (raart:place-at matted
+                            (sub1 num-lines) (length wip-line)
+                            (raart:fg 'brgreen (raart:char #\█)))  ; or ▒?
+            matted))
+      with-cursor]))
   (next))
 
 
 (define (^credits bcom dpr-pushdown)
   (define text-buffer
-    (spawn ^text-buffer 20))
+    (spawn ^text-buffer 20 50))
 
   ($ text-buffer 'insert-char #\h 'bryellow)
   ($ text-buffer 'insert-char #\e 'brred)
@@ -97,9 +109,7 @@
       [_
        (pk 'evt evt)])]
    [(render)
-    (raart:matte 50 20
-                 #:halign 'left
-                 ($ text-buffer 'render))])
+    ($ text-buffer 'render #t)])
 
   #;(define (boot)
     'TODO)
