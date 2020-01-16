@@ -89,8 +89,6 @@
     (raart:frame
      (raart:vappend
       #:halign 'center
-      (raart:text " Better help text coming soon, but... ")
-      (raart:blank 0 1)
       (raart:text " Arrow keys: move ")
       (raart:text " Space: fire")
       (raart:blank 0 1)
