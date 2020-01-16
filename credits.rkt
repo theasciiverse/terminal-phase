@@ -6,6 +6,7 @@
          goblins
          goblins/actor-lib/methods
          "no-op.rkt"
+         "loopdown.rkt"
          "pwd.rkt")
 
 (require pk)
@@ -70,62 +71,133 @@
   (define text-buffer
     (spawn ^text-buffer 20 50))
 
-  ($ text-buffer 'insert-char #\h 'bryellow)
-  ($ text-buffer 'insert-char #\e 'brred)
-  ($ text-buffer 'insert-char #\l 'brgreen)
-  ($ text-buffer 'insert-char #\l 'brblue)
-  ($ text-buffer 'insert-char #\o 'brmagenta)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'insert-char #\w 'yellow)
-  ($ text-buffer 'insert-char #\o 'red)
-  ($ text-buffer 'insert-char #\r 'green)
-  ($ text-buffer 'insert-char #\l 'blue)
-  ($ text-buffer 'insert-char #\d 'magenta)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'crlf)
-  ($ text-buffer 'insert-char #\h 'bryellow)
-  ($ text-buffer 'insert-char #\e 'brred)
-  ($ text-buffer 'insert-char #\l 'brgreen)
-  ($ text-buffer 'insert-char #\l 'brblue)
-  ($ text-buffer 'insert-char #\o 'brmagenta)
+  (define base-methods
+    (methods
+     [tick no-op]
+     [(handle-event evt)
+      (match evt
+        [(or "q" "C-M")
+         ($ dpr-pushdown 'pop)]
+        [_
+         'no-op])]
+     [(render)
+      ($ text-buffer 'render #t)]))
 
-  (methods
-   [tick no-op]
-   [(handle-event evt)
-    (match evt
-      ["q"
-       ($ dpr-pushdown 'pop)]
-      [_
-       (pk 'evt evt)])]
-   [(render)
-    ($ text-buffer 'render #t)])
+  (define hang-until-quit base-methods)
 
   #;(define (boot)
     'TODO)
 
-  #;(define (next-line-handler lines)
+  (define (make-blinker-mixin)
+    (define-cell on? #t)
+    (define toggle-countdown
+      (spawn ^loopdown 15))
+    (define (mixin base)
+      (methods
+       #:extends base
+       [(tick)
+        ;; time to toggle
+        (when ($ toggle-countdown 'zero?)
+          ($ on? (not ($ on?))))
+
+        ($ toggle-countdown 'sub1)
+
+        (base 'tick)]
+       [(render)
+        ($ text-buffer 'render ($ on?))]))
+    mixin)
+
+  (define (next-line-handler lines)
     (match lines
       ['() hang-until-quit]
-      [(pair next-line rest-lines)
-       (if (regexp-match #rx"^> " next-line)
-           (read-prompt-line next-line rest-lines)
-           (read-normal-line next-line rest-lines))]))
+      [(cons next-line rest-lines)
+       (cond
+         [(regexp-match #rx"^> " next-line)
+          (read-prompt-line next-line rest-lines)]
+         [(regexp-match #rx"^%" next-line)
+          (brief-pause rest-lines)]
+         [else
+          (read-normal-line next-line rest-lines)])]))
 
-  #;(define (read-prompt-line next-line rest-lines)
-    'TODO)
+  (define (read-prompt-line line rest-lines)
+    (define blinker-mixin
+      (make-blinker-mixin))
+    (define line-chars
+      (string->list (substring line 2)))
+    ;; insert the prompt and a space
+    ($ text-buffer 'insert-char #\> 'bryellow)
+    ($ text-buffer 'insert-char #\space 'brwhite)
 
-  #;(define (read-normal-line next-line rest-lines)
-    'TODO)
+    (define (pause-before-typing)
+      (define countdown
+        (spawn ^countdown (* 30 3)))
+      (blinker-mixin
+       (methods
+        #:extends base-methods
+        [(tick)
+         ($ countdown 'sub1)
+         (when ($ countdown 'zero?)
+           (bcom (type-it)))])))
 
-  )
+    (define (type-it)
+      (define (next [chars line-chars])
+        (define type-pause
+          ;; some variance in how fast we type for realism
+          (spawn ^countdown (random 2 10)))
+
+        (blinker-mixin
+         (methods
+          #:extends base-methods
+          [(tick)
+           ($ type-pause 'sub1)
+           (when ($ type-pause 'zero?)
+             (match chars
+               ;; we're done, move to next line
+               ['()
+                ($ text-buffer 'crlf)
+                (bcom (next-line-handler rest-lines))]
+               ;; otherwise add this character
+               [(cons this-char rest-chars)
+                ($ text-buffer 'insert-char this-char 'brwhite)
+                (bcom (next rest-chars))]))])))
+      (next))
+
+    (pause-before-typing))
+
+  ;; code duplication but I am tired
+  (define (read-normal-line line rest-lines)
+    (define line-chars
+      (string->list line))
+
+    #;(define type-pause
+      (spawn ^loopdown 0))
+
+    (define (next [chars line-chars])
+      (methods
+       #:extends base-methods
+       [(tick)
+        ;; ($ type-pause 'sub1)
+        ;; (when ($ type-pause 'zero?))
+        (match chars
+          ;; we're done, move to next line
+          ['()
+           ($ text-buffer 'crlf)
+           (bcom (next-line-handler rest-lines))]
+          ;; otherwise add this character
+          [(cons this-char rest-chars)
+           ($ text-buffer 'insert-char this-char 'brgreen)
+           (bcom (next rest-chars))])]))
+    (next))
+
+  (define (brief-pause rest-lines)
+    (define type-pause
+      (spawn ^loopdown 20))
+    (methods
+     #:extends base-methods
+     [(tick)
+      ($ type-pause 'sub1)
+      (when ($ type-pause 'zero?)
+        ($ text-buffer 'crlf)
+        (bcom (next-line-handler rest-lines)))]))
+
+  (next-line-handler (credits-lines)))
