@@ -14,7 +14,8 @@
          "level-tape.rkt"
          "posinfo.rkt"
          "raart-render.rkt"
-         "credits.rkt")
+         "credits.rkt"
+         "starfield.rkt")
 
 (define render-layer-order
   '(powerup
@@ -109,7 +110,8 @@
 (define (terrain-speed-char? char)
   (hash-has-key? terrain-speed-control-chars char))
 
-(define (^level bcom level-tape score-tracker lives)
+(define (^level bcom level-tape score-tracker lives
+                #:starfield? [starfield? #t])
   (define tape-eater
     (spawn ^tape-eater level-tape))
 
@@ -122,6 +124,13 @@
   (define level-ticker (spawn-ticker))
 
   (define-cell exit-reason #f)
+
+  ;; set up starfield, if appropriate
+  (define starfield
+    (and starfield?
+         (spawn ^starfield (* LEVEL-WIDTH 2) (* LEVEL-HEIGHT 4))))
+  (when starfield?
+    (prime-starfield starfield (* LEVEL-WIDTH 2)))
 
   ;; We add some extra methods to this ticky that let this object
   ;; do some things:
@@ -393,8 +402,13 @@
                [posinfo (add-to-layers posinfo layers)]))
            #hasheq()))
 
+      (define backdrop-canvas
+        (if starfield?
+            ($ starfield 'render)
+            blank-level-canvas))
+
       (define level-canvas
-        (for/fold ([canvas blank-level-canvas])
+        (for/fold ([canvas backdrop-canvas])
                   ([layer render-layer-order])
           (for/fold ([canvas canvas])
                     ([this-posinfo (hash-ref blit-layers layer '())])
@@ -441,6 +455,9 @@
     (methods
      #:extends base-methods
      [(tick)
+      (when starfield?
+        ($ starfield 'advance ($ terrain-speed)))
+
       (call/ec
        (lambda (return)
          ;; maybe advance tape

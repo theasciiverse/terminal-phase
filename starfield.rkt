@@ -1,5 +1,7 @@
 #lang racket
 
+(provide ^starfield prime-starfield)
+
 (require "braille-rast.rkt"
          goblins
          goblins/actor-lib/methods
@@ -40,9 +42,9 @@
     (<= x 0))
 
   (define (new-blink-on-time)
-    (* (random 1 100) .1))
+    (* (random 10 200) .1))
   (define (new-blink-off-time)
-    (* (random 2 400) .1))
+    (* (random 300 1000) .1))
 
   (define (make-new-star initial-distance)
     (define y
@@ -59,67 +61,63 @@
           relative-speed on? blink-time))
 
   (define (new-till-spawn)
-    (random 3 15))
+    (random 5 30))
 
   (define (next till-spawn stars)
     (methods
      [(advance speed)
-      (cond
-        ;; we don't advance
-        [(zero? speed)
-         'no-op]
-        [else
-         (define base-distance
-           (/ 1.0 speed))
-         (define new-stars
-           (for/fold ([new-stars (set)])
-                     ([this-star stars])
-             (define star-distance
-               (* base-distance (star-relative-speed this-star)))
-             (define new-x
-               (- (star-x this-star) star-distance))
-             (cond
-               ;; drop this star
-               [(oob? new-x)
-                new-stars]
-               ;; Otherwise, we'll add it back having updated some
-               ;; properties
-               [else
-                (define blink-time
-                  (- (star-blink-time this-star) star-distance))
-                (define on?
-                  (star-on? this-star))
-                (when (<= blink-time 0)
-                  (set! blink-time
-                        (if on?
-                            (new-blink-off-time)
-                            (new-blink-on-time)))
-                  (set! on? (not on?)))
-                (define new-star
-                  (struct-copy star this-star
-                               [x new-x]
-                               [on? on?]
-                               [blink-time blink-time]))
-                (set-add new-stars new-star)])))
+      (define base-distance
+        (/ 1.0 (+ speed .1)))
+      (define new-stars
+        (for/fold ([new-stars (set)])
+                  ([this-star stars])
+          (define star-distance
+            (* base-distance (star-relative-speed this-star)))
+          (define new-x
+            (- (star-x this-star) star-distance))
+          (cond
+            ;; drop this star
+            [(oob? new-x)
+             new-stars]
+            ;; Otherwise, we'll add it back having updated some
+            ;; properties
+            [else
+             (define blink-time
+               (- (star-blink-time this-star) star-distance))
+             (define on?
+               (star-on? this-star))
+             (when (<= blink-time 0)
+               (set! on? (not on?))
+               (set! blink-time
+                     (if on?
+                         (new-blink-off-time)
+                         (new-blink-on-time))))
+             (define new-star
+               (struct-copy star this-star
+                            [x new-x]
+                            [on? on?]
+                            [blink-time blink-time]))
+             (set-add new-stars new-star)])))
 
-         (define next-till-spawn
-           (- till-spawn base-distance))
-         (when (<= next-till-spawn 0)
-           (set! new-stars (set-add new-stars (make-new-star base-distance)))
-           (set! next-till-spawn (new-till-spawn)))
+      (define next-till-spawn
+        (- till-spawn base-distance))
+      (when (<= next-till-spawn 0)
+        (set! new-stars (set-add new-stars (make-new-star base-distance)))
+        (set! next-till-spawn (new-till-spawn)))
 
-         (bcom (next next-till-spawn new-stars))])]
+      (bcom (next next-till-spawn new-stars))]
      [(render)
       (define grid
         (make-vector height #f))
       (for ([i height])
         (vector-set! grid i (make-vector width #f)))
       (for ([star stars])
-        (define y (star-y star))
-        (define x
-          (inexact->exact (floor (star-x star))))
-        (vector-set! (vector-ref grid (star-y star))
-                     x 'SS))
+        (when (star-on? star)
+          (define y (star-y star))
+          (define x
+            (inexact->exact (floor (star-x star))))
+          (vector-set! (vector-ref grid (star-y star))
+                       x 'SS)))
       (define braille-lines
         (brailleify-grid/list grid))
 

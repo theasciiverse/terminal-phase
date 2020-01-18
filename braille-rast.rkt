@@ -3,7 +3,7 @@
 (provide braille-configurations
          brailleify-text
          brailleify-text/list
-         brailleify-grid)
+         brailleify-grid/list)
 
 (define braille-configurations
   #hash((#(#f #f
@@ -1059,7 +1059,7 @@
    "No missing permutations"
    missing-permutations (set)))
 
-(define (brailleify-grid grid)
+(define (brailleify-grid/list grid)
   (define grid-height
     (vector-length grid))
   (define grid-width
@@ -1101,7 +1101,7 @@
 (define (brailleify-text/list text)
   (define vectext
     (vectorize-text text))
-  (brailleify-grid vectext))
+  (brailleify-grid/list vectext))
 
 (define (brailleify-text text)
   (string-join (brailleify-text/list text) "\n"))
