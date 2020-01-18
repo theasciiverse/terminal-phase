@@ -2,7 +2,8 @@
 
 (provide braille-configurations
          brailleify-text
-         brailleify-text/list)
+         brailleify-text/list
+         brailleify-grid)
 
 (define braille-configurations
   #hash((#(#f #f
@@ -1058,6 +1059,30 @@
    "No missing permutations"
    missing-permutations (set)))
 
+(define (brailleify-grid grid)
+  (define grid-height
+    (vector-length grid))
+  (define grid-width
+    (vector-length (vector-ref grid 0)))
+
+  (define (grid-ref x y)
+    (if (>= y grid-height)
+        #f
+        (if (>= x grid-width)
+            #f
+            (and (vector-ref (vector-ref grid y) x) 'SS))))
+  (define (configuration-at x y)
+    (hash-ref braille-configurations
+              (vector (grid-ref x y) (grid-ref (add1 x) y)
+                      (grid-ref x (+ y 1)) (grid-ref (add1 x) (+ y 1))
+                      (grid-ref x (+ y 2)) (grid-ref (add1 x) (+ y 2))
+                      (grid-ref x (+ y 3)) (grid-ref (add1 x) (+ y 3)))))
+  (for/list ([top-y (in-range 0 grid-height 4)])
+    (for/fold ([result-lst '()]
+               #:result (list->string (reverse result-lst)))
+              ([left-x (in-range 0 grid-width 2)])
+      (cons (configuration-at left-x top-y) result-lst))))
+
 ;; Split text into a grid of vectors of vectors.
 (define (vectorize-text text)
   (define split-text
@@ -1076,30 +1101,11 @@
 (define (brailleify-text/list text)
   (define vectext
     (vectorize-text text))
-  (define text-height
-    (vector-length vectext))
-  (define text-width
-    (vector-length (vector-ref vectext 0)))
-  (define (vectext-ref x y)
-    (if (>= y text-height)
-        #f
-        (if (>= x text-width)
-            #f
-            (vector-ref (vector-ref vectext y) x))))
-  (define (configuration-at x y)
-    (hash-ref braille-configurations
-              (vector (vectext-ref x y) (vectext-ref (add1 x) y)
-                      (vectext-ref x (+ y 1)) (vectext-ref (add1 x) (+ y 1))
-                      (vectext-ref x (+ y 2)) (vectext-ref (add1 x) (+ y 2))
-                      (vectext-ref x (+ y 3)) (vectext-ref (add1 x) (+ y 3)))))
-  (for/list ([top-y (in-range 0 text-height 4)])
-    (for/fold ([result-lst '()]
-               #:result (list->string (reverse result-lst)))
-              ([left-x (in-range 0 text-width 2)])
-      (cons (configuration-at left-x top-y) result-lst))))
+  (brailleify-grid vectext))
 
 (define (brailleify-text text)
   (string-join (brailleify-text/list text) "\n"))
+
 
 (module+ main
   (define everything-is-fine-periods
