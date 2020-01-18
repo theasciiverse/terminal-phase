@@ -1047,9 +1047,9 @@
  ;;   '   '
  ;;   '@*''
 
-(struct star (speed distance on? blink-time))
+#;(struct star (speed distance on? blink-time))
 
-(define (^starfield bcom width height)
+#;(define (^starfield bcom width height)
   (define (next stars)
     (methods
      [(advance)
