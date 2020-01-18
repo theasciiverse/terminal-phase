@@ -1,6 +1,8 @@
 #lang racket
 
-(provide braille-configurations)
+(provide braille-configurations
+         brailleify-text
+         brailleify-text/list)
 
 (define braille-configurations
   #hash((#(#f #f
