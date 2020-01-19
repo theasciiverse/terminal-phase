@@ -3,21 +3,16 @@
 * What is this?
 
 Why, a space shooter game that runs in your terminal, of course!
-Well, the core skeleton of it.  If you want this to be a complete
-game, let's see if we can pass the $500/mo milestone on:
 
-  [[https://www.patreon.com/cwebber][https://www.patreon.com/cwebber]]
+It's also two things:
 
-(At the time of writing, we're nearly there!)
+ - A reward for [[https://www.patreon.com/cwebber][Patreon donors]]; if you donate, you can show up in the credits!
+ - A test program for [[https://gitlab.com/spritely/goblins][Spritely Goblins]].
 
-Really, it's a test program for [[https://gitlab.com/spritely/goblins][Spritely Goblins]].  While Goblins is
-primarily designed for asynchronous distributed programming, I wanted
-to be sure that the non-distributed programming aspects worked solidly
-before I moved on to ensuring that the distributed programming aspects
-work nicely too.  That's the main purpose of this program.  Since
-that's complete, any remaining work on this is for entertainment
-purposes.  But entertainment is good too... if we pass that threshold,
-I'll wrap up the rest of work on this and push it out!
+While Goblins is primarily designed for asynchronous distributed
+programming, I wanted to be sure that the non-distributed programming
+aspects worked solidly before I moved on to ensuring that the
+distributed programming aspects work nicely too.
 
 * License?
 
