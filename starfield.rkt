@@ -121,8 +121,9 @@
       (define braille-lines
         (brailleify-grid/list grid))
 
-      (raart:vappend*
-       (map raart:text braille-lines))]))
+      (raart:fg 'brblack
+                (raart:vappend*
+                 (map raart:text braille-lines)))]))
   (next (new-till-spawn) (set)))
 
 (define (prime-starfield starfield width)
