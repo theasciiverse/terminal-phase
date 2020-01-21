@@ -501,7 +501,7 @@
          ($ player-ship 'move-right)]
         [" "
          ($ player-ship 'fire)]
-        ["q"
+        [(or "q" "C-[")
          ($ exit-reason 'quit)]
         [_
          'no-op])]))

@@ -57,7 +57,7 @@
          (match (vector-ref menu-options selection)
            [(list _option-text option-func)
             (option-func)])]
-        ["q"
+        [(or "q" "C-[")
          ($ dpr-pushdown 'pop)]
         [_
          'no-op])]
