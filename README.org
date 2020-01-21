@@ -22,6 +22,8 @@ GPL v3 or any later version of the GPL published by the FSF.
 
 * Installing
 
+You will need Racket 7.3 or later (Racket 7.2 might work, not sure).
+
 ** Installing from raco
 
 The easiest way to install this program is to first install Racket.
