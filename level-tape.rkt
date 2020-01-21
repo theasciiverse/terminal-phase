@@ -104,9 +104,9 @@
 (define ((^tape-eater bcom level-tape))
   (if (stream-empty? level-tape)
       (vector #f #f)
-      (values (bcom (^tape-eater bcom
-                                 (stream-rest level-tape)))
-              (stream-first level-tape))))
+      (bcom (^tape-eater bcom
+                         (stream-rest level-tape))
+            (stream-first level-tape))))
 
 (define (list->levels-stream filenames)
   (match filenames
