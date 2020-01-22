@@ -7,6 +7,8 @@
          ansi
          lux
 
+         (submod lux/word generics)
+
          ;; debugging
          pk
 
@@ -19,7 +21,8 @@
          "sprites.rkt"
          "posinfo.rkt"
          "raart-render.rkt"
-         "main-menu.rkt")
+         "main-menu.rkt"
+         "ring-buffer.rkt")
 
 (define (^starfield bcom)
   'TODO)
@@ -69,9 +72,16 @@
 ;;; Each column is a single column of current terrain.
 ;;; They're happend'ed together.
 
+(define time-till-snapshot
+  60)
+
 (struct game
   (;; actormap of participants
    actormap
+   ;; ring buffer of old actormaps
+   am-ringbuf
+   ;; countdown till next serialization
+   snapshot-countdown
    ;; dispatcher of ticks, events
    dispatch-stack
    ;; pd automata pushdown (used to check if empty)
@@ -88,9 +98,17 @@
      (define (update!)
        ;; run all objects
        ($ dispatch-stack 'tick))
-     (actormap-run! (game-actormap gw)
+     (define am
+       (game-actormap gw))
+     (actormap-run! am
                     update!)  ; test optimizing with: #:reckless? #t
-     gw)
+     (define cur-countdown
+       (game-snapshot-countdown gw))
+     (when (zero? cur-countdown)
+       (ring-buffer-insert! (game-am-ringbuf gw)
+                            (snapshot-whactormap am)))
+     (struct-copy game gw
+                  [snapshot-countdown (modulo (sub1 cur-countdown) time-till-snapshot)]))
    (define (word-event gw e)
      (match e
        ;; update screen resolution
@@ -98,6 +116,22 @@
         (struct-copy game gw
                      [display-rows rows]
                      [display-cols cols])]
+
+       ;; enter time-travelling debugger
+       ["t"
+        (match-define (game
+                       actormap am-ringbuf
+                       snapshot-countdown dispatch-stack
+                       pushdown display-rows display-cols)
+          gw)
+        (define snapshots
+          (list->vector (ring-buffer->fifo-list am-ringbuf)))
+
+        (ttdebug-game actormap am-ringbuf
+                      snapshot-countdown dispatch-stack
+                      pushdown display-rows display-cols
+                      snapshots (sub1 (vector-length snapshots)))]
+
        ;; Give it to the current dispatcher
        [_
         (define (dispatcher-handle-event!)
@@ -142,6 +176,85 @@
    (define (word-return gw)
      (void))])
 
+(struct ttdebug-game game (snapshots selection)
+  #:methods gen:word
+  [(define (word-event gw e)
+     (match e
+       ["<left>"
+        (struct-copy ttdebug-game gw
+                     [selection
+                      (modulo (sub1 (ttdebug-game-selection gw))
+                              (vector-length (ttdebug-game-snapshots gw)))])]
+       ["<right>"
+        (struct-copy ttdebug-game gw
+                     [selection
+                      (modulo (add1 (ttdebug-game-selection gw))
+                              (vector-length (ttdebug-game-snapshots gw)))])]
+       ;; back to the game
+       [(or "q" " " "C-M" "C-[")
+        (match-define (ttdebug-game actormap am-ringbuf
+                                    snapshot-countdown dispatch-stack
+                                    pushdown display-rows display-cols
+                                    snapshots selection)
+          gw)
+        (game actormap am-ringbuf
+              snapshot-countdown dispatch-stack
+              pushdown display-rows display-cols)]
+       ;; enter
+       ["C-M"
+        (match-define (ttdebug-game actormap am-ringbuf
+                                    snapshot-countdown dispatch-stack
+                                    pushdown display-rows display-cols
+                                    snapshots selection)
+          gw)
+        (define new-actormap
+          (hasheq->whactormap (vector-ref snapshots selection)))
+        (game new-actormap am-ringbuf snapshot-countdown
+              dispatch-stack pushdown display-rows display-cols)]
+       [_ gw]))
+   (define (word-output gw)
+     (define (compose-display)
+       ((current-renderer) (game-dispatch-stack gw) gw))
+     (define cols (game-display-cols gw))
+     (define rows (game-display-rows gw))
+     (define too-small?
+       (or (< rows 22)
+           (< cols 60)))
+     (cond
+       [too-small?
+        (raart:vappend
+         #:halign 'left
+         (raart:text "Terminal too small!")
+         (raart:text "60x22 minimum!"))]
+       [else
+        (define selection
+          (ttdebug-game-selection gw))
+        (define snapshots
+          (ttdebug-game-snapshots gw))
+        (define snapshots-len
+          (vector-length snapshots))
+        (raart:frame
+         (raart:vappend
+          #:halign 'center
+          (raart:text "Restore Snapshot:")
+          (raart:table
+           (list
+            (for/list ([i snapshots-len])
+              (define something-here?
+                (vector-ref snapshots i))
+              ;; if there's nothing at this position, we need to indicate that
+              (if (= i selection)
+                  (raart:bg (if something-here?
+                                'brwhite
+                                'brblack)
+                            (raart:fg 'black (raart:text (number->string i))))
+                  (raart:fg (if something-here?
+                                'brwhite
+                                'brblack)
+                            (raart:text (number->string i)))))))))]))
+   (define (word-tick gw)
+     gw)])
+
 (define (make-spawn-ticked ticker-register)
   (make-keyword-procedure
    (lambda (kws kw-args constructor . args)
@@ -150,7 +263,8 @@
      ($ ticker-register ref)
      ref)))
 
-(define (new-game rows cols level-files)
+(define (new-game rows cols level-files
+                  #:game-constructor [game-constructor game])
   (define actormap (make-actormap))
   (define (make-new-game)
     (match-define (list dispatcher-pushdown dispatcher-forwarder)
@@ -159,9 +273,10 @@
       (spawn ^main-menu dispatcher-pushdown level-files))
     ($ dispatcher-pushdown 'push main-menu)
 
-    (game actormap
-          dispatcher-forwarder dispatcher-pushdown
-          rows cols))
+    (game-constructor actormap
+                      (make-ring-buffer 20) time-till-snapshot
+                      dispatcher-forwarder dispatcher-pushdown
+                      rows cols))
   (actormap-run! actormap make-new-game
                  #:reckless? #t))
 
@@ -183,7 +298,8 @@
             (clear-screen/home))
   proc-result)
 
-(define (start-game level-files)
+(define (start-game level-files
+                    #:game-constructor [game-constructor game])
   #;(with-handlers ([exn:fail?
                    (lambda (err)
                      #;(display* (dec-soft-terminal-reset)
@@ -202,11 +318,16 @@
       (call-with-chaos
        (raart:make-raart)
        (lambda ()
-         (fiat-lux (new-game rows cols level-files))))))
+         (fiat-lux (new-game rows cols level-files
+                             #:game-constructor game-constructor))))))
   (void))
 
 (define show-fps?
   (make-parameter #f))
+
+;;; =======================================
+;;; time traveling debugger kludges go here
+;;; =======================================
 
 (module+ main
   (define level-files
