@@ -1,8 +1,10 @@
-#lang racket
+#lang racket/base
 
 (provide make-ring-buffer
          ring-buffer-insert!
          ring-buffer)
+
+(require racket/match)
 
 (struct ring-buffer (vec pos)
   #:mutable)
