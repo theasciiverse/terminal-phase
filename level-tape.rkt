@@ -1,7 +1,13 @@
-#lang racket
+#lang racket/base
 
 (provide read-level-tape open-level-tape ^tape-eater
          list->levels-stream)
+
+(require racket/match
+         racket/string
+         racket/vector
+         racket/stream
+         racket/port)
 
 ;; Separate level text into flavor lines, tile lines, and count
 ;; of longest tile line

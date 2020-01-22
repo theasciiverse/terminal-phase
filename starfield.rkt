@@ -1,8 +1,9 @@
-#lang racket
+#lang racket/base
 
 (provide ^starfield prime-starfield)
 
-(require "braille-rast.rkt"
+(require racket/set
+         "braille-rast.rkt"
          goblins
          goblins/actor-lib/methods
          (prefix-in raart: raart))

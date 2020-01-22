@@ -1,8 +1,9 @@
-#lang racket
+#lang racket/base
 
 (provide ^main-menu)
 
-(require (prefix-in raart: raart)
+(require racket/match
+         (prefix-in raart: raart)
          goblins
          goblins/actor-lib/methods
          "credits.rkt"

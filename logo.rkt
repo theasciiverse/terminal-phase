@@ -1,8 +1,9 @@
-#lang at-exp racket
-
-(require (prefix-in raart: raart))
+#lang at-exp racket/base
 
 (provide logo-lines logo-raart)
+
+(require racket/string
+         (prefix-in raart: raart))
 
 (define (text-lines . strs)
   (string-split (string-join strs "") "\n"))

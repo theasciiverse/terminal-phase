@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (provide ^total-score-tracker)
 

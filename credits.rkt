@@ -1,8 +1,11 @@
-#lang at-exp racket
+#lang at-exp racket/base
 
 (provide ^credits)
 
-(require (prefix-in raart: raart)
+(require racket/match
+         racket/string
+         racket/port
+         (prefix-in raart: raart)
          goblins
          goblins/actor-lib/methods
          "no-op.rkt"
