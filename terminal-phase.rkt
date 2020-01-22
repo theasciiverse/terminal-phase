@@ -218,8 +218,6 @@
               dispatch-stack pushdown display-rows display-cols)]
        [_ gw]))
    (define (word-output gw)
-     (define (compose-display)
-       ((current-renderer) (game-dispatch-stack gw) gw))
      (define cols (game-display-cols gw))
      (define rows (game-display-rows gw))
      (define too-small?
@@ -243,7 +241,7 @@
         (define selected-snapshot
           (vector-ref snapshots selection))
         (define background
-          #;(if selected-snapshot
+          (if selected-snapshot
               (actormap-run (game-actormap gw)
                             (λ ()
                               ((current-renderer)
@@ -252,8 +250,7 @@
                                      am-ringbuf
                                      snapshot-countdown dispatch-stack
                                      pushdown display-rows display-cols))))
-              (spaced-blank display-cols display-rows))
-          (spaced-blank display-cols display-rows))
+              (spaced-blank display-cols display-rows)))
 
         (define snapshot-ui
           (raart:frame
