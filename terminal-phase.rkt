@@ -73,7 +73,7 @@
 ;;; They're happend'ed together.
 
 (define time-till-snapshot
-  60)
+  30)
 
 (struct game
   (;; actormap of participants
@@ -180,6 +180,11 @@
   #:methods gen:word
   [(define (word-event gw e)
      (match e
+       ;; update screen resolution
+       [(screen-size-report rows cols)
+        (struct-copy ttdebug-game gw
+                     [display-rows #:parent game rows]
+                     [display-cols #:parent game cols])]
        ["<left>"
         (struct-copy ttdebug-game gw
                      [selection
@@ -227,31 +232,55 @@
          (raart:text "Terminal too small!")
          (raart:text "60x22 minimum!"))]
        [else
-        (define selection
-          (ttdebug-game-selection gw))
-        (define snapshots
-          (ttdebug-game-snapshots gw))
+        (match-define (ttdebug-game actormap am-ringbuf
+                                    snapshot-countdown dispatch-stack
+                                    pushdown display-rows display-cols
+                                    snapshots selection)
+          gw)
         (define snapshots-len
           (vector-length snapshots))
-        (raart:frame
-         (raart:vappend
-          #:halign 'center
-          (raart:text "Restore Snapshot:")
-          (raart:table
-           (list
-            (for/list ([i snapshots-len])
-              (define something-here?
-                (vector-ref snapshots i))
-              ;; if there's nothing at this position, we need to indicate that
-              (if (= i selection)
-                  (raart:bg (if something-here?
-                                'brwhite
-                                'brblack)
-                            (raart:fg 'black (raart:text (number->string i))))
-                  (raart:fg (if something-here?
-                                'brwhite
-                                'brblack)
-                            (raart:text (number->string i)))))))))]))
+        ;; Render the game at selection, if appropriate.
+        (define selected-snapshot
+          (vector-ref snapshots selection))
+        (define background
+          #;(if selected-snapshot
+              (actormap-run (game-actormap gw)
+                            (λ ()
+                              ((current-renderer)
+                               dispatch-stack
+                               (game (hasheq->whactormap selected-snapshot)
+                                     am-ringbuf
+                                     snapshot-countdown dispatch-stack
+                                     pushdown display-rows display-cols))))
+              (spaced-blank display-cols display-rows))
+          (spaced-blank display-cols display-rows))
+
+        (define snapshot-ui
+          (raart:frame
+           (raart:vappend
+            #:halign 'center
+            (raart:text "Restore Snapshot:")
+            (raart:table
+             (list
+              (for/list ([i snapshots-len])
+                (define something-here?
+                  (vector-ref snapshots i))
+                ;; if there's nothing at this position, we need to indicate that
+                (if (= i selection)
+                    (raart:bg (if something-here?
+                                  'brwhite
+                                  'brblack)
+                              (raart:fg 'black (raart:text (number->string i))))
+                    (raart:fg (if something-here?
+                                  'brwhite
+                                  'brblack)
+                              (raart:text (number->string i))))))))))
+
+        ;; center the snapshot ui over the bg
+        (raart:place-at background 1
+                        (- (quotient (raart:raart-w background) 2)
+                           (quotient (raart:raart-w snapshot-ui) 2))
+                        snapshot-ui)]))
    (define (word-tick gw)
      gw)])
 
