@@ -196,7 +196,7 @@
                       (modulo (add1 (ttdebug-game-selection gw))
                               (vector-length (ttdebug-game-snapshots gw)))])]
        ;; back to the game
-       [(or "q" " " "C-M" "C-[")
+       [(or "q" " " "C-[")
         (match-define (ttdebug-game actormap am-ringbuf
                                     snapshot-countdown dispatch-stack
                                     pushdown display-rows display-cols
@@ -212,10 +212,16 @@
                                     pushdown display-rows display-cols
                                     snapshots selection)
           gw)
-        (define new-actormap
-          (hasheq->whactormap (vector-ref snapshots selection)))
-        (game new-actormap am-ringbuf snapshot-countdown
-              dispatch-stack pushdown display-rows display-cols)]
+        (define snapshot
+          (vector-ref snapshots selection))
+        (cond
+          [snapshot
+           (define new-actormap
+             (hasheq->whactormap snapshot))
+           (game new-actormap am-ringbuf snapshot-countdown
+                 dispatch-stack pushdown display-rows display-cols)]
+          ;; continue as-is, this isn't a valid selection
+          [else gw])]
        [_ gw]))
    (define (word-output gw)
      (define cols (game-display-cols gw))
@@ -275,7 +281,7 @@
                               (raart:text (number->string i))))))))))
 
         ;; center the snapshot ui over the bg
-        (raart:place-at background 1
+        (raart:place-at background 0
                         (- (quotient (raart:raart-w background) 2)
                            (quotient (raart:raart-w snapshot-ui) 2))
                         snapshot-ui)]))
