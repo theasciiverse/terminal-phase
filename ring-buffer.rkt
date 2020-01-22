@@ -2,7 +2,10 @@
 
 (provide make-ring-buffer
          ring-buffer-insert!
-         ring-buffer)
+         ring-buffer-newest
+         ring-buffer-oldest
+         ring-buffer->fifo-list
+         ring-buffer->lifo-list)
 
 (require racket/match)
 
