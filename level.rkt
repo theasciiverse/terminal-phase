@@ -1,8 +1,12 @@
-#lang racket
+#lang racket/base
 
 (provide ^level ^level-manager)
 
-(require pk)
+(require pk
+         racket/match
+         racket/set
+         racket/format
+         racket/stream)
 
 (require (prefix-in raart: raart)
          goblins

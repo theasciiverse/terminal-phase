@@ -1,6 +1,9 @@
-#lang racket
+#lang racket/base
 
-(require (prefix-in raart: raart)
+(require racket/match
+         racket/cmdline
+
+         (prefix-in raart: raart)
          ansi
          lux
 

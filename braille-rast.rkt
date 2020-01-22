@@ -1,9 +1,12 @@
-#lang racket
+#lang racket/base
 
 (provide braille-configurations
          brailleify-text
          brailleify-text/list
          brailleify-grid/list)
+
+(require racket/string
+         racket/set)
 
 (define braille-configurations
   #hash((#(#f #f

@@ -1,8 +1,9 @@
-#lang racket
-
-(require (prefix-in raart: raart))
+#lang racket/base
 
 (provide (all-defined-out))
+
+(require (prefix-in raart: raart)
+         racket/match)
 
 ;;; Some raart utilities
 ;;;

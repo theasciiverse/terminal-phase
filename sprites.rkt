@@ -1,8 +1,10 @@
-#lang racket
+#lang racket/base
 
 (provide (all-defined-out))
 
-(require goblins
+(require racket/match
+         racket/function
+         goblins
          goblins/actor-lib/methods
          goblins/actor-lib/add-sub
          "no-op.rkt"
