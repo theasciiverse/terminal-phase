@@ -242,14 +242,15 @@
           (vector-ref snapshots selection))
         (define background
           (if selected-snapshot
-              (actormap-run (game-actormap gw)
-                            (λ ()
-                              ((current-renderer)
-                               dispatch-stack
-                               (game (hasheq->whactormap selected-snapshot)
-                                     am-ringbuf
-                                     snapshot-countdown dispatch-stack
-                                     pushdown display-rows display-cols))))
+              (let ([select-am
+                     (hasheq->whactormap selected-snapshot)])
+                (actormap-run select-am
+                              (λ ()
+                                ((current-renderer)
+                                 dispatch-stack
+                                 (game select-am am-ringbuf
+                                       snapshot-countdown dispatch-stack
+                                       pushdown display-rows display-cols)))))
               (spaced-blank display-cols display-rows)))
 
         (define snapshot-ui
