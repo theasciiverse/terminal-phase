@@ -89,11 +89,17 @@
                   | SUPPORTERS |
                   '------------'
 %
+                  Bassam Kurdali
+%
                  Charles Stanhope
 %
                   Craig Maloney
 %
+                  Daniel Finlay
+%
                       elmiko
+%
+                      extarv
 %
                     Tim Howes
 %
