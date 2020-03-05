@@ -75,6 +75,12 @@
 (define time-till-snapshot
   30)
 
+(define (maybe-frametime-label gw frame-time
+                               [game-name "> Terminal Phase <"])
+  (if (show-fps?)
+      (lux-standard-label game-name frame-time)
+      game-name))
+
 (struct game
   (;; actormap of participants
    actormap
@@ -119,18 +125,21 @@
 
        ;; enter time-travelling debugger
        ["t"
-        (match-define (game
-                       actormap am-ringbuf
-                       snapshot-countdown dispatch-stack
-                       pushdown display-rows display-cols)
-          gw)
-        (define snapshots
-          (list->vector (ring-buffer->fifo-list am-ringbuf)))
+        (cond
+          [(allow-time-travel?)
+           (match-define (game
+                          actormap am-ringbuf
+                          snapshot-countdown dispatch-stack
+                          pushdown display-rows display-cols)
+             gw)
+           (define snapshots
+             (list->vector (ring-buffer->fifo-list am-ringbuf)))
 
-        (ttdebug-game actormap am-ringbuf
-                      snapshot-countdown dispatch-stack
-                      pushdown display-rows display-cols
-                      snapshots (sub1 (vector-length snapshots)))]
+           (ttdebug-game actormap am-ringbuf
+                         snapshot-countdown dispatch-stack
+                         pushdown display-rows display-cols
+                         snapshots (sub1 (vector-length snapshots)))]
+          [else gw])]
 
        ;; Give it to the current dispatcher
        [_
@@ -164,10 +173,7 @@
         (actormap-run (game-actormap gw)
                       compose-display)]))
    (define (word-label gw frame-time)
-     (define game-name "> Terminal Phase <")
-     (if (show-fps?)
-         (lux-standard-label game-name frame-time)
-         game-name))
+     (maybe-frametime-label gw frame-time))
    (define (word-fps gw)
      ;; 30?  60???
      ;; probably 30 is something terminals can reliably
@@ -285,6 +291,9 @@
                         (- (quotient (raart:raart-w background) 2)
                            (quotient (raart:raart-w snapshot-ui) 2))
                         snapshot-ui)]))
+   (define (word-label gw frame-time)
+     (maybe-frametime-label gw frame-time
+                            ">> Time Travel <<"))
    (define (word-tick gw)
      gw)])
 
@@ -357,6 +366,8 @@
 
 (define show-fps?
   (make-parameter #f))
+(define allow-time-travel?
+  (make-parameter #f))
 
 ;;; =======================================
 ;;; time traveling debugger kludges go here
@@ -375,6 +386,9 @@
      [("-f" "--show-fps")
       "Show current FPS"
       (show-fps? #t)]
+     [("-t" "--time-travel")
+      "Allow time travel with 't' key"
+      (allow-time-travel? #t)]
      #:args level-files
      level-files))
 
