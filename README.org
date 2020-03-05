@@ -45,3 +45,10 @@ checkout, then run:
 Then you can run it like:
 
 : racket terminal-phase.rkt
+
+* Time travel!
+
+If you want to play with the experimental [[https://dustycloud.org/blog/goblins-time-travel-micropreview/][time travel feature]], you can
+do so by supplying the =--time-travel= argument when you launch
+Terminal Phase.
+Press the =t= key to initiate time travel!
