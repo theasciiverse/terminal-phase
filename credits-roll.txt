@@ -152,7 +152,8 @@
 %
 
            Thanks also to Samsung Stack Zero,
-        who has supported Spritely's development!
+                  and NLNet + NGI Zero,
+        who have supported Spritely's development!
 %
 
 > SHOW "THANKS"
