@@ -344,6 +344,11 @@
                        (spawn constructor score-ticky level-right-x y))
                      (set-box! obj-box enemy)
                      enemy)))
+              ;; Here's all of the level characters -> enemy spawners we've
+              ;; written so far
+              ;; NOTE: For whatever reason the enemies don't specify how many
+              ;; points they're worth when they die but I'm not sure that makes
+              ;; sense in retrospect
               (match tile-char
                 [#\<
                  (match flavor-char
