@@ -332,6 +332,18 @@
              [(cons #\# _)
               (cons #t terrain-cells)]
              [(cons tile-char flavor-char)
+              ;; Here's how we spwan a ticked enemy.
+              ;;
+              ;; NOTE: For whatever reason the enemies don't specify how many
+              ;; points they're worth when they die... instead, they get given
+              ;; a point by whatever constructs them.  I think I was
+              ;; experimenting with some vague PoLA reason for this but it
+              ;; doesn't make much sense in retrospect.
+              ;;
+              ;; A better design would be to give the user points through the
+              ;; ticky.  If you really want to do some PoLA stuff you could limit
+              ;; the number of permitted points that something, or its children,
+              ;; can give.
               (define (spawn-ticked-enemy constructor points)
                 ($ level-ticker 'to-tick
                    (λ (ticky)
@@ -346,9 +358,6 @@
                      enemy)))
               ;; Here's all of the level characters -> enemy spawners we've
               ;; written so far
-              ;; NOTE: For whatever reason the enemies don't specify how many
-              ;; points they're worth when they die but I'm not sure that makes
-              ;; sense in retrospect
               (match tile-char
                 [#\<
                  (match flavor-char
