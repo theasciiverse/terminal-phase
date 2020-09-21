@@ -20,9 +20,38 @@
 
 (define base-sprite
   (methods
+   ;; Called once per game tick, allows this object to
+   ;; "do something interesting" such as move, attack, etc.
+   ;; Called with no arguments
    [tick no-op]
+   ;; After everyone has taken their actions, collisions are detected.
+   ;; If this object has collided with something else, this will be
+   ;; called for each relevant collision with the following three arguments:
+   ;;  - with: the object we're colliding with
+   ;;  - with-posinfo: the particular posinfo structure we bumped into
+   ;;  - phase: Which collision "phase" this happened in.  There are really
+   ;;    three because due to the weird "live grid action game" nature of Terminal
+   ;;    Phase, we need to test against "tentatively, what would happen if I moved
+   ;;    based on what the game looked like last time" and also "okay everyone
+   ;;    moved did anyone bump into each other?":
+   ;;     - 'player-move: the player tries to move, we just test what the
+   ;;       effects would be on the world if *just they* moved.  ()The player
+   ;;       is currently the only ship that's both tested as they move and
+   ;;       after everyone moves... this is to prevent the player "skipping
+   ;;       past" enemies)
+   ;;     - 'main-tick: any other object that wants to see if a collision would
+   ;;       happen if it moves... and checked against the *last* collision
+   ;;       positions.  Kinda similar to 'player-move, maybe can be merged
+   ;;       eventually.
+   ;;     - 'super-collide: the main collision test after *everyone* moves.
    [collide no-op]
+   ;; This method takes no arguments and returns a posinfo or list of
+   ;; posinfo objects.
+   ;; Posinfo objects are both used for display/rendering of characters and for
+   ;; collision detection.
    [posinfo (const '())]
+   ;; This is called every time the level moves forward (ie, the terrain
+   ;; moves.)  This is called before the 'tick method.
    [level-advance no-op]))
 
 (define (^player-ship bcom ticky lives x y)
