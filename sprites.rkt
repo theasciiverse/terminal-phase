@@ -728,7 +728,7 @@
    [(kills-player-bullet?)
     shootable?]))
 
-(define (^enemy-mine bcom ticky initial-x initial-y)
+(define (^enemy:mine bcom ticky initial-x initial-y)
   (define-cell x initial-x)
   (define-cell y initial-y)
   (define healthy-mixin

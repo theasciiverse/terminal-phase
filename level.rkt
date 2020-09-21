@@ -377,7 +377,7 @@
                 [#\I
                  (spawn-ticked-enemy ^enemy:turret 40)]
                 [#\+
-                 (spawn-ticked-enemy ^enemy-mine 10)]
+                 (spawn-ticked-enemy ^enemy:mine 10)]
                 [_ 'no-op])
               (cons #f terrain-cells)]
              [#f
