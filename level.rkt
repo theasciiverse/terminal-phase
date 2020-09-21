@@ -332,7 +332,7 @@
              [(cons #\# _)
               (cons #t terrain-cells)]
              [(cons tile-char flavor-char)
-              ;; Here's how we spwan a ticked enemy.
+              ;; Here's how we spawn a ticked enemy.
               ;;
               ;; NOTE: For whatever reason the enemies don't specify how many
               ;; points they're worth when they die... instead, they get given
