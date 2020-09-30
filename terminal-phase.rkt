@@ -73,7 +73,7 @@
 ;;; They're happend'ed together.
 
 (define time-till-snapshot
-  30)
+  1)
 
 (define (maybe-frametime-label gw frame-time
                                [game-name "> Terminal Phase <"])

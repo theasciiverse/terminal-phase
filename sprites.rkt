@@ -728,9 +728,40 @@
    [(kills-player-bullet?)
     shootable?]))
 
+(define (^enemy-bullet:upbeam bcom ticky initial-x initial-y)
+  (define x
+    (spawn ^cell initial-x))
+  (define y
+    (spawn ^cell initial-y))
+  (methods
+   #:extends (screenslider-mixin base-sprite
+                                 x y ticky)
+   [(tick)
+    (define next-y
+      (sub1 ($ y)))
+    (if (< next-y 0)
+        ;; we went out of bounds
+        ($ ticky 'die)
+        ;; otherwise move up
+        ($ y next-y))]
+   [(posinfo)
+    (posinfo ($ x) ($ y) #\|
+             'bryellow
+             'enemy-bullet)]
+   [(collide with with-posinfo phase)
+    (match (posinfo-layer with-posinfo)
+      ['terrain
+       ;; time to die
+       ($ ticky 'die)]
+      [_ 'no-op])]
+   [(kills-player-bullet?)
+    #f]))
+
 (define (^enemy:mine bcom ticky initial-x initial-y)
-  (define-cell x initial-x)
-  (define-cell y initial-y)
+  (define x
+    (spawn ^cell initial-x))
+  (define y
+    (spawn ^cell initial-y))
   (define healthy-mixin
     (make-healthy-mixin ticky 2))
 
@@ -749,3 +780,47 @@
         ;; time to die
         ($ ticky 'die #:points? #t)]
        [_ 'no-op])])))
+
+(define (^enemy:up-cannon bcom ticky initial-x initial-y)
+  (define x
+    (spawn ^cell initial-x))
+  (define y
+    (spawn ^cell initial-y))
+
+  (define healthy-mixin
+    (make-healthy-mixin ticky 3))
+
+  (define (idle-beh [countdown 30])
+    (healthy-mixin
+     (methods
+      #:extends (screenslider-mixin base-enemy
+                                    x y ticky)
+      [(posinfo)
+       (posinfo ($ x) ($ y)
+                #\^ 'brcyan
+                'enemy)]
+      [(tick)
+       (if (zero? countdown)
+           (bcom (firing-beh))
+           (bcom (idle-beh (sub1 countdown))))])))
+  (define (firing-beh [countdown 10])
+    (healthy-mixin
+     (methods
+      #:extends (screenslider-mixin base-enemy
+                                    x y ticky)
+      [(posinfo)
+       (posinfo ($ x) ($ y)
+                #\^ 'bryellow
+                'enemy)]
+      [(tick)
+       (if (zero? countdown)
+           (bcom (idle-beh))
+           (begin
+             ($ ticky 'to-tick
+                (lambda (ticky)
+                  (spawn ^enemy-bullet:upbeam ticky
+                         ($ x) ($ y))))
+             (bcom (firing-beh (sub1 countdown)))))])))
+  (idle-beh))
+
+
