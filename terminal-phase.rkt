@@ -73,7 +73,7 @@
 ;;; They're happend'ed together.
 
 (define time-till-snapshot
-  30)
+  (make-parameter 30))
 
 (define (maybe-frametime-label gw frame-time
                                [game-name "> Terminal Phase <"])
@@ -114,7 +114,7 @@
        (ring-buffer-insert! (game-am-ringbuf gw)
                             (snapshot-whactormap am)))
      (struct-copy game gw
-                  [snapshot-countdown (modulo (sub1 cur-countdown) time-till-snapshot)]))
+                  [snapshot-countdown (modulo (sub1 cur-countdown) (time-till-snapshot))]))
    (define (word-event gw e)
      (match e
        ;; update screen resolution
@@ -316,7 +316,7 @@
     ($ dispatcher-pushdown 'push main-menu)
 
     (game-constructor actormap
-                      (make-ring-buffer 20) time-till-snapshot
+                      (make-ring-buffer 20) (time-till-snapshot)
                       dispatcher-forwarder dispatcher-pushdown
                       rows cols))
   (actormap-run! actormap make-new-game
@@ -389,6 +389,10 @@
      [("-t" "--time-travel")
       "Allow time travel with 't' key"
       (allow-time-travel? #t)]
+     [("--tt-ticks")
+      tt-ticks
+      "Number of ticks per snapshot for --time-travel (default: 30)"
+      (time-till-snapshot (string->number tt-ticks))]
      #:args level-files
      level-files))
 
