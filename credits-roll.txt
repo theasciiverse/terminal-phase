@@ -80,6 +80,16 @@
 %
                    Osama Khalid
 %
+                   Dan Connolly
+%
+                    Jorge Lugo
+%
+                      Brendan
+%
+                       User
+%
+                     S. Donor
+%
 
 > SHOW "FIRING AT ENEMIES"
 
