@@ -388,10 +388,7 @@
        ($ terrain 'push-col terrain-col)
 
        ;; Inform all ticked items that the level has advanced
-       ($ level-ticker 'foldr
-          (λ (ticked _)
-            ($ ticked 'level-advance))
-          #f))))
+       ($ level-ticker 'tick 'level-advance))))
 
   (define header
     (raart:fg 'brwhite
