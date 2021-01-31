@@ -40,6 +40,10 @@
 %
                    Liran Cohen
 %
+                   Mark Wielaard
+%
+                  Benjamin Goering
+%
 
 > SHOW "PLAYER SHIP"
 
@@ -116,8 +120,6 @@
                       extarv
 %
                     Tim Howes
-%
-                  Mark Wielaard
 %
                     Hamzah M
 %
