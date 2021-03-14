@@ -86,7 +86,8 @@
    [collide no-op]
    ;; TODO: I guess maybe the level advancement code goes... here?
    ;;   Not sure.
-   [level-advance no-op]))
+   [pre-level-advance no-op]
+   [post-level-advance no-op]))
 
 (define terrain-speed-control-chars
   #hasheq((#\0 . 0)
@@ -320,6 +321,8 @@
            [#\L ($ loop? #t)]
            [_ 'no-op]))
 
+       ($ level-ticker 'tick 'pre-level-advance)
+
        ;; Now we walk through the column and build up the new
        ;; terrain-col
        (define terrain-col
@@ -388,7 +391,7 @@
        ($ terrain 'push-col terrain-col)
 
        ;; Inform all ticked items that the level has advanced
-       ($ level-ticker 'tick 'level-advance))))
+       ($ level-ticker 'tick 'post-level-advance))))
 
   (define header
     (raart:fg 'brwhite

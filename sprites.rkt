@@ -50,9 +50,10 @@
    ;; Posinfo objects are both used for display/rendering of characters and for
    ;; collision detection.
    [posinfo (const '())]
+   [pre-level-advance no-op]
    ;; This is called every time the level moves forward (ie, the terrain
    ;; moves.)  This is called before the 'tick method.
-   [level-advance no-op]))
+   [post-level-advance no-op]))
 
 (define (^player-ship bcom ticky lives x y)
   (define-cell moved-this-tick? #f)
@@ -570,10 +571,15 @@
 
 (define (screenslider-mixin base
                             x y ticky)
+  (define-cell have-i-run?
+    #f)
   (methods
    #:extends base
-   [(level-advance)
-    (cell-sub1 x)
+   [(pre-level-advance)
+    ($ have-i-run? #t)]
+   [(post-level-advance)
+    (when ($ have-i-run?)
+      (cell-sub1 x))
     ;; die if we pass off screen
     (when (oob? ($ x) ($ y))
       ($ ticky 'die))]))
@@ -765,21 +771,25 @@
   (define healthy-mixin
     (make-healthy-mixin ticky 2))
 
-  (healthy-mixin
-   (methods
-    #:extends (screenslider-mixin base-enemy
-                                  x y ticky)
-    [(posinfo)
-     (posinfo ($ x) ($ y)
-              #\+ 'brgreen
-              'enemy)]
-    ;; Additionally, we die if a player collides with us
-    [(collide with with-posinfo phase)
-     (match (posinfo-layer with-posinfo)
-       ['player
-        ;; time to die
-        ($ ticky 'die #:points? #t)]
-       [_ 'no-op])])))
+  (define screenslider-beh
+    (screenslider-mixin base-enemy
+                        x y ticky))
+  (define pre-healthy-beh
+    (methods
+     #:extends screenslider-beh
+     [(posinfo)
+      (posinfo ($ x) ($ y)
+               #\+ 'brgreen
+               'enemy)]
+     ;; Additionally, we die if a player collides with us
+     [(collide with with-posinfo phase)
+      (match (posinfo-layer with-posinfo)
+        ['player
+         ;; time to die
+         ($ ticky 'die #:points? #t)]
+        [_ 'no-op])]))
+
+  (healthy-mixin pre-healthy-beh))
 
 (define (^enemy:up-cannon bcom ticky initial-x initial-y)
   (define x
