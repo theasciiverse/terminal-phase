@@ -297,14 +297,6 @@
    (define (word-tick gw)
      gw)])
 
-(define (make-spawn-ticked ticker-register)
-  (make-keyword-procedure
-   (lambda (kws kw-args constructor . args)
-     (define ref
-       (keyword-apply spawn kws kw-args constructor args))
-     ($ ticker-register ref)
-     ref)))
-
 (define (new-game rows cols level-files
                   #:game-constructor [game-constructor game])
   (define actormap (make-actormap))
