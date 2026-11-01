@@ -1,0 +1,105 @@
+# Builds Terminal Phase for the Asciiverse catalog: one archive per
+# target, named <id>-<target>.tar.gz, plus a SHA256SUMS file, attached to
+# a GitHub release (hub/catalog/SCHEMA.md, release.source = "github").
+#
+# Tags look like v1.1+20211226-av.1. The game is Racket; asciiverse/build.sh
+# makes a standalone program with raco exe and raco distribute (Racket's
+# runtime bundled, about 20 MB packed), and asciiverse/stage.sh puts the
+# start script on top. Linux builds link against glibc (Racket's own
+# runtime does), so they are named -gnu; no Windows build, because the
+# game's terminal library (ansi, unix-signals) is Unix only.
+
+name: release
+
+on:
+  push:
+    tags: ["*-av.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "existing tag to build and release"
+        required: true
+
+env:
+  ID: terminal-phase
+  TAG: ${{ inputs.tag || github.ref_name }}
+  RACKET: "8.18"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, runner: ubuntu-22.04, installer: x86_64-linux-cs }
+          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-22.04-arm, installer: aarch64-linux-cs }
+          - { target: x86_64-apple-darwin, runner: macos-13 }
+          - { target: aarch64-apple-darwin, runner: macos-14 }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Racket (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          curl -fsSL -o racket.sh \
+            "https://download.racket-lang.org/installers/$RACKET/racket-$RACKET-${{ matrix.installer }}.sh"
+          sh racket.sh --in-place --dest "$HOME/racket"
+          echo "$HOME/racket/bin" >> "$GITHUB_PATH"
+
+      - name: Racket (macOS)
+        if: runner.os == 'macOS'
+        uses: Bogdanp/setup-racket@v1.11
+        with:
+          version: ${{ env.RACKET }}
+          variant: CS
+          distribution: full
+
+      - name: Build
+        run: |
+          racket --version
+          sh asciiverse/build.sh
+          sh asciiverse/stage.sh
+          file stage/bin/terminal-phase
+
+      - name: Smoke test
+        run: |
+          # starts, finds its runtime, and prints its options
+          stage/terminal-phase --help
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          tar -czf "dist/$ID-${{ matrix.target }}.tar.gz" -C stage .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist/*
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS && cat SHA256SUMS
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "Terminal Phase $TAG" \
+                 --notes "Terminal Phase by Christine Lemmer-Webber (gitlab.com/dustyweb/terminal-phase), the Racket version, built for the Asciiverse catalog as a standalone program for Linux and macOS. GPL-3.0-or-later. Changes: see PATCHES.md."
+          gh release upload "$TAG" dist/* -R "$GITHUB_REPOSITORY" --clobber

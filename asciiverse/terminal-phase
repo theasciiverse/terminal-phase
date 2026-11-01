@@ -1,0 +1,8 @@
+#!/bin/sh
+# Starts Terminal Phase from an av install. bin/terminal-phase is a
+# standalone Racket program (raco distribute) that finds the Racket
+# runtime, the levels and the credits in lib/plt next to it.
+# av links ~/.local/bin/terminal-phase to this file, so follow that link first.
+self=$(readlink "$0" 2>/dev/null || printf '%s' "$0")
+dir=$(cd "$(dirname "$self")" && pwd)
+exec "$dir/bin/terminal-phase" "$@"
