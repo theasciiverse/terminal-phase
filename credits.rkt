@@ -15,7 +15,7 @@
 (require pk)
 
 (define credits-filename
-  (build-path pwd "credits-roll.txt"))
+  credits-roll-file)
 
 (define (credits-lines)
   (call-with-input-file credits-filename

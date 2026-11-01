@@ -25,7 +25,7 @@
          (list->levels-stream level-files)]
         [_ (list->levels-stream
             (map (λ (fname)
-                   (build-path pwd (build-path "levels" fname)))
+                   (build-path levels-dir fname))
                  '("level1.txt" "level2.txt")))]))
     (define level-manager
       (spawn ^level-manager levels-stream dpr-pushdown
